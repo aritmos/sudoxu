@@ -8,7 +8,7 @@ pub struct Idx<const N: u8>(u8);
 
 impl<const N: u8> Idx<N> {
     // Create an Idx<N> from `n: u8`
-    // Panics if n >= N
+    // Panics if `n >= N`
     pub fn new(n: impl Into<u8>) -> Self {
         let n: u8 = n.into();
         assert!(n < N);
