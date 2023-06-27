@@ -4,7 +4,9 @@ use std::mem::transmute;
 
 impl Cell {
     /// Returns `Some(n)` if the cell has a known `Num` "`n`" else None.
-    /// COMMENT: Does no error checking to verify cell is correct.
+    /// # Safety
+    /// Does no error checking to verify cell is correct.
+    /// Simply looks at the "known" byte and counts ones.
     pub fn known(&self) -> Option<Num> {
         let cell_u16 = self.to_u16();
         if cell_u16 % 2 != 1 {
@@ -14,7 +16,7 @@ impl Cell {
             return None;
         }
 
-        Some(Num::new_unchecked(cell_u16.ilog2() as u8))
+        Some(unsafe { Num::new_unchecked(cell_u16.ilog2() as u8) })
     }
 }
 

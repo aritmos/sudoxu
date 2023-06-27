@@ -1,4 +1,3 @@
-use crate::finders::*;
 use crate::structs::*;
 
 /// Single Candidate:
@@ -13,7 +12,7 @@ impl Cell {
 
         // same assembly if we use `is_power_of_two()`
         if cell_u16.count_ones() == 1 {
-            Ok(Some(Num::new(cell_u16.ilog2() as u8)))
+            Ok(Some(unsafe { Num::new_unchecked(cell_u16.ilog2() as u8) }))
         } else {
             Ok(None)
         }

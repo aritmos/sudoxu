@@ -2,7 +2,7 @@ use crate::structs::*;
 use std::fmt::{Debug, Display};
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
-/// A u16 with the following bite representation:
+/// A u16 with the following bit representation:
 /// (000 000) 0 0 0  0 0 0  0 0 0  0
 /// .         ^^^^^^^^^^^^^^^^^^^  ^
 /// .         candidates           known
@@ -24,6 +24,8 @@ pub type CellResult = Result<Option<Num>, CellError>;
 
 /// Base implementations
 impl Cell {
+    /// # Safety
+    /// The caller must ensure that the content of the `u16` is a valid representation of a `Cell`.
     pub unsafe fn new_unchecked(n: u16) -> Self {
         Self(n)
     }
@@ -63,7 +65,8 @@ impl Cell {
         &mut self.0
     }
 
-    /// COMMENT: this gets optimised out to `self.0` which
+    /// # Comment
+    /// This gets optimised out to `self.0` which
     /// ends up being the same as directly working with a `u16`
     pub fn to_u16(self) -> u16 {
         self.0
@@ -88,7 +91,6 @@ impl Debug for Cell {
 impl Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let cell_u16 = self.to_u16();
-        let cell_str = String::new();
         if cell_u16 % 2 == 1 {
             let n = (cell_u16 & !1).ilog2();
             write!(f, "{}", n.to_string())
@@ -166,9 +168,23 @@ impl BitXorAssign for Cell {
 impl Not for Cell {
     type Output = Cell;
 
+    /// Flips only the candidate bits in a `Cell`
+    ///
+    /// # Safety
+    /// Method is technically `unsafe` as it can produce a `CellError::NoCandidates`
+    /// output. However `!Cell` is only meant to be used within bitmask operations,
+    /// hence it should be verified by the caller within its usecases that the actual
+    /// output of the entire calculation produces a valid `Cell`.
+    ///
+    /// # Examples
+    /// ```rust
+    /// assert_eq!(!Cell::new(0b000000_111000000_0), Cell::new(0b000000_000111111_0))
+    /// assert_eq!(!Cell::new(0b000000_101010101_0), Cell::new(0b000000_010101010_0))
+    /// // Technically invalid `Cell` state output:
+    /// assert_eq!(!Cell::new(0b000000_111111111_0), Cell::new(0b000000_000000000_0))
+    /// ```
     fn not(self) -> Self::Output {
-        let not_bits = unsafe { Self::new_unchecked(!self.to_u16()) };
-        not_bits & Self::default()
+        self ^ Self::default()
     }
 }
 

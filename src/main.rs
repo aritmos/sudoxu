@@ -1,26 +1,21 @@
-#![allow(unused)]
+#![allow(dead_code)]
 #![allow(incomplete_features)]
-#![feature(maybe_uninit_array_assume_init)]
-#![feature(generic_const_exprs)]
 #![feature(slice_flatten)]
+#![feature(generic_const_exprs)]
+#![feature(maybe_uninit_array_assume_init)]
 
 mod filters;
-
 mod finders;
-
 mod structs;
-use structs::*;
+mod utils;
+pub use structs::*;
 
 fn main() {
     let mut cell = Cell::default();
-    cell.remove_candidate(Num::new(4));
-    cell.remove_candidate(Num::new(5));
+    cell.remove_candidate(Num::new(4).unwrap());
+    cell.remove_candidate(Num::new(5).unwrap());
 
-    let mut x = cell.to_u16(); // copies;
-    x = 3;
-    println!("{cell}");
+    println!("{}", !cell);
 
-    let mut y = cell.get_mut();
-    *y = 3;
-    println!("{cell}");
+    let _x = Idx::<9>::new(5_u8);
 }

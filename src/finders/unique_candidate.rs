@@ -19,7 +19,7 @@ impl Cell {
             0 => Ok(None),
             1 => {
                 let n = sole_candidates.ilog2() as u8;
-                Ok(Some(n.try_into().unwrap()))
+                Ok(Some(unsafe { Num::new_unchecked(n) }))
             }
             2.. => Err(CellError::MultipleSoleCandidates),
         }
@@ -43,9 +43,9 @@ impl Grid {
             cell.unique_candidate(&square_comp_cells),
         ];
 
-        /// Fold the results of each section's unique_candidate results into one
-        /// TODO: how to properly deal with sections returning multiple errors
-        /// CURRENT IMPL: returns first error it encounters in the order: row, col, square.
+        // Fold the results of each section's unique_candidate results into one
+        // TODO: how to properly deal with sections returning multiple errors
+        // CURRENT IMPL: returns first error it encounters in the order: row, col, square.
         section_results
             .into_iter()
             .fold(Ok(None), |x, y| match (x, y) {

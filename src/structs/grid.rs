@@ -1,41 +1,46 @@
 use crate::structs::*;
+use crate::utils::pop;
 use std::mem::{transmute, MaybeUninit};
 
 // #[derive(Clone, Copy)]
 pub struct Grid([Cell; 81]);
 
-/// 00 01 02 | 03 04 05 | 06 07 08
-/// 09 10 11 | 12 13 14 | 15 16 17
-/// 18 19 20 | 21 22 23 | 24 25 26
-/// ---------+----------+---------
-/// 27 28 29 | 30 31 32 | 33 34 35
-/// 36 37 38 | 39 40 41 | 42 43 44
-/// 45 46 47 | 48 49 50 | 51 52 53
-/// ---------+----------+---------
-/// 54 55 56 | 57 58 59 | 60 61 62
-/// 63 64 65 | 66 67 68 | 69 70 71
-/// 72 73 74 | 75 76 77 | 78 79 80
+// border chars: ─ │ ┌ ┐ ┘ └ ┼
+/// 00 01 02 │ 03 04 05 │ 06 07 08
+/// 09 10 11 │ 12 13 14 │ 15 16 17
+/// 18 19 20 │ 21 22 23 │ 24 25 26
+/// ─────────┼──────────┼─────────
+/// 27 28 29 │ 30 31 32 │ 33 34 35
+/// 36 37 38 │ 39 40 41 │ 42 43 44
+/// 45 46 47 │ 48 49 50 │ 51 52 53
+/// ─────────┼──────────┼─────────
+/// 54 55 56 │ 57 58 59 │ 60 61 62
+/// 63 64 65 │ 66 67 68 │ 69 70 71
+/// 72 73 74 │ 75 76 77 │ 78 79 80
 pub type GridIdx = Idx<81>;
 
-/// Row and col `SectionIdx` are the usual.
-/// Square `SectionIdx`s:
-/// 0 | 1 | 2
-/// - + - + -
-/// 3 | 4 | 5
-/// - + - + -
-/// 6 | 7 | 8
-/// Inner square `SectionIdx`s:
-/// 0 1 2 | 0 1 2 | 0 1 2
-/// 3 4 5 | 3 4 5 | 3 4 5
-/// 6 7 8 | 6 7 8 | 6 7 8
-/// - - - + - - - + - - -
-/// 0 1 2 | ...
+/// # Row and column `SectionIdx`s are the usual row and column numbers or the `Grid`
+/// # Square `SectionIdx`s:
+/// 0 │ 1 │ 2
+/// ──┼───┼──
+/// 3 │ 4 │ 5
+/// ──┼───┼──
+/// 6 │ 7 │ 8
+/// # Inner square `SectionIdx`s:
+/// 0 1 2 │ 0 1 2 │ 0 1 2
+/// 3 4 5 │ 3 4 5 │ 3 4 5
+/// 6 7 8 │ 6 7 8 │ 6 7 8
+/// ──────┼───────┼──────
+/// 0 1 2 │ ...
 pub type SectionIdx = Idx<9>;
 
-impl Grid {
-    pub fn new() -> Self {
+impl Default for Grid {
+    fn default() -> Self {
         Self([Cell::default(); 81])
     }
+}
+
+impl Grid {
     /// Get the Cell at index `idx`
     #[inline(always)]
     pub fn get(&self, idx: GridIdx) -> Cell {
@@ -67,9 +72,7 @@ impl std::fmt::Display for Grid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out_string = String::new();
         fn row_to_string(grid: &Grid, n: SectionIdx) -> String {
-            let row = grid
-                .get_cells(Grid::row_indices(unsafe { Idx::from_unchecked(0_u8) }))
-                .map(char::from);
+            let row = grid.get_cells(Grid::row_indices(n)).map(char::from);
             format!(
                 "│ {} {} {} │ {} {} {} │ {} {} {} │\n",
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]
@@ -77,17 +80,17 @@ impl std::fmt::Display for Grid {
         }
 
         out_string += "┌───────────────────────┐\n";
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(0_u8) });
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(1_u8) });
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(2_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(0_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(1_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(2_u8) });
         out_string += "│ ──────┼───────┼────── │\n";
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(3_u8) });
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(4_u8) });
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(5_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(3_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(4_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(5_u8) });
         out_string += "│ ──────┼───────┼────── │\n";
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(6_u8) });
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(7_u8) });
-        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(8_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(6_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(7_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::new_unchecked(8_u8) });
         out_string += "└───────────────────────┘\n";
 
         write!(f, "{out_string}")
@@ -154,18 +157,27 @@ impl Grid {
         let square_idx = 3 * (row_idx / 3) + (col_idx / 3);
         let inner_square_idx = { 3 * (row_idx % 3) + (col_idx % 3) };
         [
-            unsafe { SectionIdx::from_unchecked(row_idx) },
-            unsafe { SectionIdx::from_unchecked(col_idx) },
-            unsafe { SectionIdx::from_unchecked(square_idx) },
-            unsafe { SectionIdx::from_unchecked(inner_square_idx) },
+            unsafe { SectionIdx::new_unchecked(row_idx) },
+            unsafe { SectionIdx::new_unchecked(col_idx) },
+            unsafe { SectionIdx::new_unchecked(square_idx) },
+            unsafe { SectionIdx::new_unchecked(inner_square_idx) },
         ]
     }
 
-    /// Returns the compliment of the index within its row, col, and square
-
     /// Returns the complimentary indices within the cells row, column and square.
+    /// # Example (see `GridIdx`; the casts to `Idx` are excluded for clarity)
+    /// ```rust
+    /// assert_eq!(
+    ///     Grid::compliment_indices(40),
+    ///     [
+    ///         [36, 37, 38, 39, 41, 42, 43, 44],
+    ///         [04, 13, 22, 31, 49, 58, 67, 76],
+    ///         [30, 31, 32, 39, 41, 48, 49, 50],
+    ///     ]
+    /// )
+    /// ```
     pub fn compliment_indices(idx: GridIdx) -> [[GridIdx; 8]; 3] {
-        let [row_idx, col_idx, square_idx, inner_square_idx] = Grid::section_indices(idx);
+        let [row_idx, col_idx, square_idx, _] = Grid::section_indices(idx);
 
         let row_idxs = Grid::row_indices(row_idx);
         let col_idxs = Grid::col_indices(col_idx);

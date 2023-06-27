@@ -1,8 +1,5 @@
 use crate::structs::*;
-use std::{
-    fmt::Display,
-    mem::{transmute, MaybeUninit},
-};
+use std::fmt::Display;
 
 pub enum SectionType {
     Row,
@@ -19,28 +16,9 @@ impl From<[Cell; 9]> for Section {
 }
 
 impl Section {
-    pub fn pop(cells: Self, idx: SectionIdx) -> [Cell; 8] {
-        // COMMENT: It seems like using maybeuninit has marginal assembly differences
-        //          (https://godbolt.org/z/MbvrdTz6c) compared to simply instantiating
-        //          the array manually.
-        // COMMENT: Currently it is not allowed to do a transmute on a const len array
-        //          So I can't make this function generic in the form:
-        //          `fn([Cell; N], Idx<N>) -> [Cell; N - 1]`
-        let mut remaining_cells: [MaybeUninit<Cell>; 8] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-
-        let mut iter = cells.0.into_iter();
-        for (i, c) in remaining_cells.iter_mut().enumerate() {
-            let cell = iter.next().unwrap();
-            if i != idx.into() {
-                *c = MaybeUninit::new(cell);
-            }
-        }
-        unsafe { transmute(remaining_cells) }
-    }
-
     /// Custom `to_string` method instead of the `ToString: Display` one.
-    /// TODO: Possibly move the intricate `Square` implementation into the `Square` struct
+    /// # TODO
+    /// Possibly move the intricate `Square` implementation into the `Square` struct
     pub fn to_str(&self, section_type: SectionType) -> String {
         match section_type {
             SectionType::Square => {
