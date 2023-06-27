@@ -32,7 +32,7 @@ impl Area {
                 }
             }
 
-            let subsection_compliment_idxs = compliment_idxs(Idx::<3>::from_unchecked(idx));
+            let subsection_compliment_idxs = compliment_idxs(unsafe { Idx::from_unchecked(idx) });
 
             for num in 1..=9 {
                 let num = Num::new_unchecked(num);
@@ -43,12 +43,14 @@ impl Area {
                 }
 
                 // find at which row index in the subsection we have the `1`
-                let row_idx = Idx::<3>::from_unchecked(
-                    <[Cell; 3]>::from(self.values[idx])
-                        .iter()
-                        .position(|c| c.contains_candidate(num))
-                        .unwrap(),
-                );
+                let row_idx = unsafe {
+                    Idx::<3>::from_unchecked(
+                        <[Cell; 3]>::from(self.values[idx])
+                            .iter()
+                            .position(|c| c.contains_candidate(num))
+                            .unwrap(),
+                    )
+                };
 
                 let row_compliment_idxs = compliment_idxs(row_idx);
 

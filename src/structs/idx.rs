@@ -15,7 +15,7 @@ impl<const N: u8> Idx<N> {
         Self(n)
     }
 
-    pub fn from_unchecked(value: impl Into<usize>) -> Self {
+    pub unsafe fn from_unchecked(value: impl Into<usize>) -> Self {
         Self::new(value.into() as u8)
     }
 }

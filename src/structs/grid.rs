@@ -68,7 +68,7 @@ impl std::fmt::Display for Grid {
         let mut out_string = String::new();
         fn row_to_string(grid: &Grid, n: SectionIdx) -> String {
             let row = grid
-                .get_cells(Grid::row_indices(Idx::from_unchecked(0_u8)))
+                .get_cells(Grid::row_indices(unsafe { Idx::from_unchecked(0_u8) }))
                 .map(char::from);
             format!(
                 "│ {} {} {} │ {} {} {} │ {} {} {} │\n",
@@ -77,17 +77,17 @@ impl std::fmt::Display for Grid {
         }
 
         out_string += "┌───────────────────────┐\n";
-        out_string += &row_to_string(self, Idx::from_unchecked(0_u8));
-        out_string += &row_to_string(self, Idx::from_unchecked(1_u8));
-        out_string += &row_to_string(self, Idx::from_unchecked(2_u8));
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(0_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(1_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(2_u8) });
         out_string += "│ ──────┼───────┼────── │\n";
-        out_string += &row_to_string(self, Idx::from_unchecked(3_u8));
-        out_string += &row_to_string(self, Idx::from_unchecked(4_u8));
-        out_string += &row_to_string(self, Idx::from_unchecked(5_u8));
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(3_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(4_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(5_u8) });
         out_string += "│ ──────┼───────┼────── │\n";
-        out_string += &row_to_string(self, Idx::from_unchecked(6_u8));
-        out_string += &row_to_string(self, Idx::from_unchecked(7_u8));
-        out_string += &row_to_string(self, Idx::from_unchecked(8_u8));
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(6_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(7_u8) });
+        out_string += &row_to_string(self, unsafe { Idx::from_unchecked(8_u8) });
         out_string += "└───────────────────────┘\n";
 
         write!(f, "{out_string}")
@@ -154,10 +154,10 @@ impl Grid {
         let square_idx = 3 * (row_idx / 3) + (col_idx / 3);
         let inner_square_idx = { 3 * (row_idx % 3) + (col_idx % 3) };
         [
-            SectionIdx::from_unchecked(row_idx),
-            SectionIdx::from_unchecked(col_idx),
-            SectionIdx::from_unchecked(square_idx),
-            SectionIdx::from_unchecked(inner_square_idx),
+            unsafe { SectionIdx::from_unchecked(row_idx) },
+            unsafe { SectionIdx::from_unchecked(col_idx) },
+            unsafe { SectionIdx::from_unchecked(square_idx) },
+            unsafe { SectionIdx::from_unchecked(inner_square_idx) },
         ]
     }
 
