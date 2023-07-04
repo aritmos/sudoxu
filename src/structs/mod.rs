@@ -21,3 +21,7 @@ pub use num::*;
 ///collection of [Cell; 9]
 pub mod section;
 pub use section::*;
+
+/// Filters used to remove candidates from Cells
+pub mod filter;
+pub use filter::*;

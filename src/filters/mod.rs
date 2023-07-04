@@ -1,9 +1,5 @@
 //! Filters are methods to remove candidates within Cells inside of the Grid.
 
-/// Basic `Filter` definitions and functionality
-mod filter;
-pub use filter::*;
-
 /// Filter the neighboring cells when a `Cell` becomes known
 mod filter_known;
 pub use filter_known::*;

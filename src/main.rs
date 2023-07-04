@@ -7,8 +7,8 @@
 mod filters;
 mod finders;
 mod structs;
-mod utils;
 pub use structs::*;
+mod utils;
 
 fn main() {
     let mut cell = Cell::default();
