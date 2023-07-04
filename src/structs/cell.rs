@@ -30,7 +30,6 @@ impl Cell {
         Self(n)
     }
 
-    // TODO: create proper error variant
     pub fn new(n: u16) -> Result<Self, CellError> {
         // u16 cant be too small or too large
         match n {
@@ -199,16 +198,12 @@ impl Cell {
         self.mask(num.to_mask());
     }
 
-    pub fn mask(&mut self, mask: Cell) {
-        *self &= mask;
-    }
-
     pub fn contains_candidate(self, num: Num) -> bool {
         self.to_u16() & (1 << num as u8) != 0
     }
 
-    /// Returns a `Cell` whose candidates are the known numbers within the square
-    pub fn combine_candidates(cells: &[Cell]) -> Cell {
+    /// Returns a "`Cell`" whose candidates are the known numbers within the provided slice
+    pub fn combine_known(cells: &[Cell]) -> Cell {
         let mut known = unsafe { Cell::new_unchecked(0) };
         for cell in cells {
             if cell.is_known() {

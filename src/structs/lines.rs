@@ -1,26 +1,26 @@
 use crate::structs::*;
-use std::mem::{transmute, MaybeUninit};
-
-#[derive(Clone, Copy)]
-pub struct Square([Cell; 9]);
+use std::mem::transmute;
 
 /// A square whose rows or columns have been collapsed into one by folding with BITWISE OR
 #[derive(Clone, Copy)]
 pub struct SubSection([Cell; 3]);
 
 impl Square {
-    /// Folds the rows and columns of a square using `OR`.
+    /// Folds the rows and columns of a SQUARE using `OR`.
     /// Rotates if required and returns `[rows, cols]`.
+    /// # Safety
+    /// This function should only be called on `Squares`
     pub fn fold_into_subsections(self, rotate: bool) -> [Cell; 3] {
+        let cells = self.to_cells();
         let rows = [
-            self.0[0] | self.0[1] | self.0[2],
-            self.0[3] | self.0[4] | self.0[5],
-            self.0[6] | self.0[7] | self.0[8],
+            cells[0] | cells[1] | cells[2],
+            cells[3] | cells[4] | cells[5],
+            cells[6] | cells[7] | cells[8],
         ];
         let cols = [
-            self.0[0] | self.0[3] | self.0[6],
-            self.0[1] | self.0[4] | self.0[7],
-            self.0[2] | self.0[5] | self.0[8],
+            cells[0] | cells[3] | cells[6],
+            cells[1] | cells[4] | cells[7],
+            cells[2] | cells[5] | cells[8],
         ];
         if !rotate {
             rows
@@ -38,9 +38,8 @@ impl From<SubSection> for [Cell; 3] {
 
 impl SubSection {
     /// Takes the three subsections of a square and a number `0 <= N <= 3`.
-    /// Within each bit stores a `1` if we have seen N `1`s at that bit position,
+    /// Within each bit stores a `1` if we have seen `N` `1`s at that bit position,
     /// else stores a `0`.
-    /// # Example
     /// ```rust
     /// let bits = SubSection([
     ///     0b0101_0010,
@@ -72,7 +71,28 @@ impl SubSection {
     }
 }
 
+/// Indexes into the 6 areas of a `Grid`
+/// # REPRESENTATION
+/// `0   1   2`
+/// `↓   ↓   ↓`
+/// `S │ S │ S <- 3`
+/// `──┼───┼──`
+/// `S │ S │ S <- 4`
+/// `──┼───┼──`
+/// `S │ S │ S <- 5`
+pub type AreaIdx = Idx<6>;
+
 /// Represents a collection of 3 squares.
+/// ```rust
+/// pub struct Area {
+///     pub values: [SubSection; 3],
+///     pub masks: [[Mask; 3]; 3],
+///     pub known: [Cell; 3],   // NOTE: candidates represent known values within the square
+///     pub matches: [Cell; 3], // bitwise equality between columns: 0-1, 0-2, 1-2
+///     pub count_1: [Cell; 3], // contain_count<1> on each collapsed square
+///     pub count_2: [Cell; 3], // contain_count<2> on each collapsed square
+/// }
+/// ```
 /// # Comment
 /// The squares are thought to be horizontal.
 /// If the are represents a vertical alignment of squares
@@ -86,92 +106,26 @@ impl SubSection {
 /// `Cell Cell Cell | Cell Cell Cell | Cell Cell Cell`
 /// `Cell Cell Cell | Cell Cell Cell | Cell Cell Cell`
 /// `Cell Cell Cell | Cell Cell Cell | Cell Cell Cell`
-/// ## `data`
+/// ## `Area.values`
 /// combine the candidates of each column into one (using `OR` on columns)
 /// `Cell | Cell | Cell`
 /// `Cell | Cell | Cell`
 /// `Cell | Cell | Cell`
-/// ## `known`
-/// known numbers within the square. Represented as candidates in a `Cell`.
-/// `Cell | Cell | Cell`
-/// ## `masks`
-/// Bitmasks for each of the 9 areas. 0..=2 for the first square and so on.
-/// ## `equality`
-/// Check pairs of columns in data for equality ordering is:
-/// `0 <-> 1, 0 <-> 2, 1 <-> 2` (using `!XOR` on columns then `AND` on rows)
-/// `data` -> `[Cell, Cell, Cell]` -> `Cell | Cell | Cell`
-/// ## `count_1_vertical`
-/// Like `count_1` but for `data_vertical` (horizontal folding)
-/// ## `count_2`
-/// Collapse data vertically by counting if bits appear twice in a column
-/// `Cell | Cell | Cell`
+/// ## `Area.masks`
+/// Bitmasks for each of the 9 `Subsection`s. 0..=2 for the first square and so on.
+/// ## `Area.index`
+/// Keeps track of its `AreaIdx`.
+/// Used when getting indices to return the final `Filter`s.
 pub struct Area {
     pub values: [SubSection; 3],
-    pub masks: [[Cell; 3]; 3],
-    pub known: [Cell; 3],
-    pub comparisons: [Cell; 3], // bitwise equality between columns: 0-1, 0-2, 1-2
-    pub count_1: [Cell; 3],     // contain_count<1> on each collapsed square
-    pub count_2: [Cell; 3],     // contain_count<2> on each collapsed square
+    pub masks: [[Mask; 3]; 3],
+    pub index: AreaIdx,
 }
 
 // border chars: ─ │ ┌ ┐ ┘ └ ┼
 
-/// Indexes into the 6 areas of a `Grid`
-/// # REPRESENTATION
-/// `0   1   2`
-/// `↓   ↓   ↓`
-/// `S │ S │ S <- 3`
-/// `──┼───┼──`
-/// `S │ S │ S <- 4`
-/// `──┼───┼──`
-/// `S │ S │ S <- 5`
-pub type AreaIdx = Idx<6>;
-
-impl Area {
-    /// Updates `values` using `masks`
-    /// # TODO
-    /// Current implementation masks the entire area this is somewhat
-    /// inefficient. Perhaps I should implement a method where only modified
-    /// sectors get written to as to not suffer performance in the late game.
-    /// where we expect few modifications.
-    fn update_values(&mut self) {
-        self.values
-            .iter_mut()
-            .zip(self.masks)
-            .for_each(|(subsection, masks)| {
-                for (cell, mask) in subsection.0.iter_mut().zip(masks) {
-                    cell.mask(mask);
-                }
-            });
-    }
-
-    /// Updates `comparisons`, `count_1` and `count_2` using `data`
-    fn update_data(&mut self) {
-        fn collapsed_square_equality(a: SubSection, b: SubSection) -> Cell {
-            let (a, b) = (a.0, b.0); // use inner values
-            !(a[0] ^ b[0]) & !(a[1] ^ b[1]) & !(a[2] ^ b[2])
-        }
-
-        let data = self.values;
-
-        self.comparisons = [
-            collapsed_square_equality(data[0], data[1]),
-            collapsed_square_equality(data[0], data[2]),
-            collapsed_square_equality(data[1], data[2]),
-        ];
-
-        // compute counts
-        self.count_1 = data.map(|s| s.contain_count::<1>());
-        self.count_2 = data.map(|s| s.contain_count::<2>());
-    }
-}
-
 impl Grid {
     /// Obtains the `Area` from within the `Grid`, rotating if necessary
-    /// # Safety
-    /// Contains very unsafe code as to not have to initialise data in the latter fields
-    /// before populating it with the `update_data()` method. Upon changes always make sure
-    /// that the unitialised `Area` at the end gets all of its fields properly initialised.
     pub fn get_area(&self, n: AreaIdx) -> Area {
         let rotate = u8::from(n) < 3;
         // get the cells in the 3 squares
@@ -187,27 +141,75 @@ impl Grid {
             })
         };
 
-        let squares = square_idxs.map(|i| {
-            let idxs = Grid::square_indices(i);
-            Square(self.get_cells(idxs))
+        let squares: [Square; 3] = square_idxs.map(|i| {
+            let cell_idxs = Grid::square_indices(i);
+            Square::new(self.get_cells(cell_idxs))
         });
 
         let values = squares.map(|s| SubSection(s.fold_into_subsections(rotate)));
-        let known = squares.map(|s| Cell::combine_candidates(&s.0));
+        // let known = squares.map(|s| Cell::combine_known(&s.to_cells()));
 
-        // VERY UNSAFE!
-        // Done so we can use `update_data` without needing to instantiate the fields
-        // Verify upon changes that every field is initialised!
-        #[allow(clippy::let_and_return)]
-        let area = {
-            let mut uninit_area: Area = unsafe { transmute(MaybeUninit::<Area>::uninit()) };
-            uninit_area.values = values;
-            uninit_area.masks = [[Cell::default(); 3]; 3];
-            uninit_area.known = known;
-            uninit_area.update_data();
-            uninit_area
-        };
+        Area {
+            values,
+            masks: Default::default(),
+            index: n,
+        }
+    }
+}
 
-        area
+impl Area {
+    /// Check pairs of columns in data for matching candidate signatures per column
+    /// E.g.: "First and second squares both have "`101`" as their candidate signature for the
+    /// number 2 (in terms of their columns)" => First `Cell` at the 2nd bit (0 indexed) is a 1.
+    /// If they differ then the bit would be zero.
+    /// Ordering: `0 <-> 1, 0 <-> 2, 1 <-> 2`
+    /// For each pair: `!XOR` columns then `AND` rows
+    /// `Cell | Cell     Cell`
+    /// `Cell | Cell --> Cell --> Cell`
+    /// `Cell | Cell`    Cell`
+    pub fn get_matches(&self) -> [Cell; 3] {
+        fn collapsed_square_equality(a: SubSection, b: SubSection) -> Cell {
+            let (a, b) = (a.0, b.0); // use inner values
+            !(a[0] ^ b[0]) & !(a[1] ^ b[1]) & !(a[2] ^ b[2])
+        }
+
+        let values = self.values;
+
+        [
+            collapsed_square_equality(values[0], values[1]),
+            collapsed_square_equality(values[0], values[2]),
+            collapsed_square_equality(values[1], values[2]),
+        ]
+    }
+
+    /// Known numbers within the squares represented as candidates within a `Cell`
+    pub fn get_known(&self) -> [Cell; 3] {
+        self.values.map(|square| Cell::combine_known(&square.0))
+    }
+
+    /// Uses `Subsection::contains_count()` on each `Square`.
+    pub fn get_count<const N: u8>(&self) -> [Cell; 3] {
+        self.values.map(|s| s.contain_count::<1>())
+    }
+
+    /// Updates `values` using `masks`
+    /// # TODO
+    /// Current implementation masks the entire area this is somewhat
+    /// inefficient. Perhaps I should implement a method where only modified
+    /// sectors get written to as to not suffer performance in the late game.
+    /// where we expect few modifications.
+    /// # TODO
+    /// possibly implement derefmut such that i dont have to do
+    /// `subsection.0.iter_mut()`
+    /// # TODO
+    /// possibly flatten `self.values` and `self.masks` to begin with
+    fn update_values(&mut self) {
+        let values: &mut [Cell; 27] = unsafe { transmute(&mut self.values) };
+        // Making this a reference avoids copying the data.
+        let masks: &[Mask; 27] = unsafe { transmute(&self.masks) };
+
+        for (cell, mask) in values.iter_mut().zip(masks) {
+            cell.mask(*mask)
+        }
     }
 }

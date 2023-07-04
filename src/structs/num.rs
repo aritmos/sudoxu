@@ -38,8 +38,4 @@ impl Num {
     pub unsafe fn new_unchecked(n: u8) -> Self {
         unsafe { transmute(n) }
     }
-
-    pub fn to_mask(self) -> Cell {
-        unsafe { Cell::new_unchecked(!(1 << self as u16)) }
-    }
 }

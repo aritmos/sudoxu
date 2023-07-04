@@ -1,4 +1,3 @@
-use crate::filters::*;
 use crate::structs::*;
 use std::mem::transmute;
 
@@ -21,14 +20,16 @@ impl Cell {
 }
 
 impl Grid {
-    pub fn known(&mut self, idx: GridIdx) -> GridFilter {
+    pub fn known(&mut self, idx: GridIdx) -> Filter {
         let Some(num) = self.get(idx).known() else {
             panic!("Tried to use `filter_known` on an unknown cell.");
         };
-        let comp_idxs = Grid::compliment_indices(idx);
-        let comp_idxs = unsafe { transmute::<_, [Idx<81>; 24]>(comp_idxs) };
-        let idxs = Vec::from(comp_idxs);
+        let idxs = {
+            let comp_idxs_nested = Grid::compliment_indices(idx);
+            let comp_idxs_flat = unsafe { transmute::<_, [Idx<81>; 24]>(comp_idxs_nested) };
+            Vec::from(comp_idxs_flat)
+        };
 
-        GridFilter::new(Filter::Num(num), idxs)
+        Filter::new(num.to_mask(), idxs)
     }
 }
