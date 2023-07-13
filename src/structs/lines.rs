@@ -85,12 +85,9 @@ pub type AreaIdx = Idx<6>;
 /// Represents a collection of 3 squares.
 /// ```rust
 /// pub struct Area {
-///     pub values: [SubSection; 3],
-///     pub masks: [[Mask; 3]; 3],
-///     pub known: [Cell; 3],   // NOTE: candidates represent known values within the square
-///     pub matches: [Cell; 3], // bitwise equality between columns: 0-1, 0-2, 1-2
-///     pub count_1: [Cell; 3], // contain_count<1> on each collapsed square
-///     pub count_2: [Cell; 3], // contain_count<2> on each collapsed square
+///     pub values: [SubSection; 3], // values of the three `Squares`
+///     pub masks: [[Mask; 3]; 3],   // masks to create `Filter`s
+///     pub index: AreaIdx,          // its own `AreaIdx`, used for outputting `Filter`s
 /// }
 /// ```
 /// # Comment
@@ -147,7 +144,6 @@ impl Grid {
         });
 
         let values = squares.map(|s| SubSection(s.fold_into_subsections(rotate)));
-        // let known = squares.map(|s| Cell::combine_known(&s.to_cells()));
 
         Area {
             values,
@@ -194,22 +190,115 @@ impl Area {
 
     /// Updates `values` using `masks`
     /// # TODO
-    /// Current implementation masks the entire area this is somewhat
-    /// inefficient. Perhaps I should implement a method where only modified
-    /// sectors get written to as to not suffer performance in the late game.
-    /// where we expect few modifications.
-    /// # TODO
-    /// possibly implement derefmut such that i dont have to do
-    /// `subsection.0.iter_mut()`
-    /// # TODO
     /// possibly flatten `self.values` and `self.masks` to begin with
-    fn update_values(&mut self) {
+    /// # Comment
+    /// It seems that these transmutes are free looking at the asm output.
+    pub fn update_values(&mut self) {
         let values: &mut [Cell; 27] = unsafe { transmute(&mut self.values) };
         // Making this a reference avoids copying the data.
         let masks: &[Mask; 27] = unsafe { transmute(&self.masks) };
 
         for (cell, mask) in values.iter_mut().zip(masks) {
-            cell.mask(*mask)
+            *cell &= *mask
+        }
+    }
+
+    /// Returns the `Filter`s given by `Area.masks`
+    /// # TODO
+    /// keep cache of original masks and only add a filter if it has something to filter
+    /// and return a `Vec<Filter>`
+    pub fn get_filters(&self) -> [Filter; 27] {
+        // the 27 grid indexes pointing to the cells used to make `Area.values`
+        let grid_idxs_flattened: [GridIdx; 27] = {
+            let squares_idxs = match u8::from(self.index) {
+                0 => [0, 3, 6],
+                1 => [1, 4, 7],
+                2 => [2, 5, 8],
+                3 => [0, 1, 2],
+                4 => [3, 4, 5],
+                5 => [6, 7, 8],
+                _ => unreachable!(),
+            };
+
+            let grid_idxs = squares_idxs.map(|square_idx| {
+                Grid::square_indices(unsafe { SectionIdx::new_unchecked(square_idx) })
+            });
+
+            unsafe { transmute(grid_idxs) }
+        };
+
+        // let mut filters: [MaybeUninit<Filter>; 9] = MaybeUninit::uninit_array();
+        let masks: [Mask; 9] = unsafe { transmute(self.masks) };
+
+        macro_rules! filter_builder {
+            ($grid_idxs_idx:expr, $mask_idx:expr) => {
+                Filter {
+                    mask: masks[$mask_idx],
+                    idx: grid_idxs_flattened[$grid_idxs_idx],
+                }
+            };
+        }
+
+        if u8::from(self.index) > 2 {
+            [
+                filter_builder!(0, 0),
+                filter_builder!(1, 0),
+                filter_builder!(2, 0),
+                filter_builder!(3, 1),
+                filter_builder!(4, 1),
+                filter_builder!(5, 1),
+                filter_builder!(6, 2),
+                filter_builder!(7, 2),
+                filter_builder!(8, 2),
+                filter_builder!(9, 3),
+                filter_builder!(10, 3),
+                filter_builder!(11, 3),
+                filter_builder!(12, 4),
+                filter_builder!(13, 4),
+                filter_builder!(14, 4),
+                filter_builder!(15, 5),
+                filter_builder!(16, 5),
+                filter_builder!(17, 5),
+                filter_builder!(18, 6),
+                filter_builder!(19, 6),
+                filter_builder!(20, 6),
+                filter_builder!(21, 7),
+                filter_builder!(22, 7),
+                filter_builder!(23, 7),
+                filter_builder!(24, 8),
+                filter_builder!(25, 8),
+                filter_builder!(26, 8),
+            ]
+        } else {
+            [
+                filter_builder!(0, 2),
+                filter_builder!(1, 1),
+                filter_builder!(2, 0),
+                filter_builder!(3, 2),
+                filter_builder!(4, 1),
+                filter_builder!(5, 0),
+                filter_builder!(6, 2),
+                filter_builder!(7, 1),
+                filter_builder!(8, 0),
+                filter_builder!(9, 5),
+                filter_builder!(10, 4),
+                filter_builder!(11, 3),
+                filter_builder!(12, 5),
+                filter_builder!(13, 4),
+                filter_builder!(14, 3),
+                filter_builder!(15, 5),
+                filter_builder!(16, 4),
+                filter_builder!(17, 3),
+                filter_builder!(18, 8),
+                filter_builder!(19, 7),
+                filter_builder!(20, 6),
+                filter_builder!(21, 8),
+                filter_builder!(22, 7),
+                filter_builder!(23, 6),
+                filter_builder!(24, 8),
+                filter_builder!(25, 7),
+                filter_builder!(26, 6),
+            ]
         }
     }
 }
