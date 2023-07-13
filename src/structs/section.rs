@@ -52,3 +52,48 @@ impl Section {
         }
     }
 }
+
+/// SIMD Stuff
+mod simd {
+    pub use super::*;
+    use std::arch::x86_64::*;
+
+    impl From<Section> for __m256i {
+        #[inline]
+        fn from(value: Section) -> Self {
+            let values: &[u16] = unsafe { std::mem::transmute(value.0.as_slice()) };
+
+            // extend array to [u16; 16] via a zero fill on RHS
+            let mut extended_section: [u16; 16] = [0; 16];
+            extended_section[..9].copy_from_slice(values);
+
+            let value_vector = unsafe { _mm256_loadu_si256(extended_section.as_ptr() as *const _) };
+            // value_vector
+
+            // create a mask "[u16; 16]" with values in {0, u16::MAX} based on the value of the LSB in
+            // the original "[u16; 16]"
+            let mask = unsafe { _mm256_cmpgt_epi16(value_vector, _mm256_setzero_si256()) };
+
+            // result
+            unsafe { _mm256_andnot_si256(mask, value_vector) }
+        }
+    }
+
+    impl Section {
+        pub unsafe fn contains_mask(values: __m256i, n: Num) -> u16 {
+            let mask = 1 << n as i16;
+
+            // load the mask into the SIMD register
+            let mask_vector = _mm256_set1_epi16(mask);
+
+            // perform bitwise AND
+            let and_result = _mm256_and_si256(values, mask_vector);
+
+            // compare the result against zero
+            let zero_vector = _mm256_setzero_si256();
+            let cmp_result = _mm256_cmpeq_epi16(and_result, zero_vector);
+            !(_mm256_movemask_epi8(cmp_result) as u16)
+        }
+    }
+}
+pub use simd::*;
