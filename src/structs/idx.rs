@@ -1,8 +1,8 @@
-/// `Idx<N>` represents a number `x` which is guaranteed
-/// to satisfy: `0 <= x < N`
+/// `Idx<N>` represents an integer `x` guaranteed to satisfy: `0 <= x < N`
 #[derive(Clone, Copy)]
 pub struct Idx<const N: u8>(u8);
 
+#[derive(Debug)]
 pub enum IdxErr {
     TooBig,
 }
