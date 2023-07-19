@@ -1,6 +1,7 @@
 use crate::structs::*;
 use std::mem::transmute;
 
+/// Wrapper for `[Cell; 9]`. Representing rows, columns, and squares.
 #[derive(Clone, Copy)]
 pub struct Section([Cell; 9]);
 
@@ -12,7 +13,6 @@ pub enum SectionType {
     Square,
 }
 
-/// Wrapper for `[Cell; 9]`, representing rows, columns, and squares.
 impl Section {
     pub fn new(cells: [Cell; 9]) -> Self {
         unsafe { transmute(cells) }
