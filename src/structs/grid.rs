@@ -148,23 +148,35 @@ impl Grid {
         unsafe { transmute(arr) }
     }
 
-    /// Returns the `SectionIdx`s of a given GridIdx:
-    /// [Row, Column, Square, Inner Square]
+    /// Returns the `SectionIdx`s of a given GridIdx in the order:
+    /// `[Row, Column, Square, InnerSquare]`.
+    ///
+    /// # Comment
+    /// "`InnerRow`" and "`InnerCol`" are not necessary as these
+    /// are simply the values of `Column` and `Row`.
+    ///
+    /// # Example (See `GridIdx`; casts to `Idx` are omitted for clarity)
+    /// ```rust
+    /// // the Cell with GridIdx 50 is in: (all 0 indexed)
+    /// // Row 5, Column 6, Square 4, index 8 within the square (InnerSquare)
+    /// assert_eq!(
+    ///     Grid::section_indices(50),
+    ///     [5, 6, 4, 8]
+    /// )
+    /// ```
     pub fn section_indices(idx: GridIdx) -> [SectionIdx; 4] {
         let idx: u8 = idx.into();
         let row_idx = idx / 9;
         let col_idx = idx % 9;
         let square_idx = 3 * (row_idx / 3) + (col_idx / 3);
         let inner_square_idx = { 3 * (row_idx % 3) + (col_idx % 3) };
-        [
-            unsafe { SectionIdx::new_unchecked(row_idx) },
-            unsafe { SectionIdx::new_unchecked(col_idx) },
-            unsafe { SectionIdx::new_unchecked(square_idx) },
-            unsafe { SectionIdx::new_unchecked(inner_square_idx) },
-        ]
+
+        [row_idx, col_idx, square_idx, inner_square_idx]
+            .map(|i| unsafe { SectionIdx::new_unchecked(i) })
     }
 
-    /// Returns the complimentary indices within the cells row, column and square.
+    /// Returns the complimentary indices within the cells row, column and square. (all neighboring
+    /// cell's indices)
     /// # Example (see `GridIdx`; the casts to `Idx` are excluded for clarity)
     /// ```rust
     /// assert_eq!(
