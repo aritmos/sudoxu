@@ -1,5 +1,5 @@
 use crate::structs::*;
-use crate::utils::pop;
+use crate::utils::array_pop;
 use std::mem::{transmute, MaybeUninit};
 
 // #[derive(Clone, Copy)]
@@ -183,9 +183,9 @@ impl Grid {
         let col_idxs = Grid::col_indices(col_idx);
         let square_idxs = Grid::square_indices(square_idx);
 
-        let row_comp_idxs = pop(row_idxs, col_idx);
-        let col_comp_idxs = pop(col_idxs, row_idx);
-        let square_comp_idxs = pop(square_idxs, square_idx);
+        let row_comp_idxs = array_pop(row_idxs, col_idx);
+        let col_comp_idxs = array_pop(col_idxs, row_idx);
+        let square_comp_idxs = array_pop(square_idxs, square_idx);
 
         [row_comp_idxs, col_comp_idxs, square_comp_idxs]
     }
