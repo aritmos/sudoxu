@@ -31,12 +31,15 @@ impl Cell {
 
 impl Grid {
     /// Finds if a `Cell` contains a unique candidate when compared against its neighbours in a
-    /// grid.
+    /// grid. i.e. apply `Cell::unique_candidate` within each `Section` containing the `Cell` and
+    /// combine the results.
     pub fn unique_candidate(&self, idx: GridIdx) -> CellResult {
         let cell = self.get(idx);
 
         Grid::compliment_indices(idx)
+            // Compliment cells for each section
             .map(|idxs| self.get_cells(idxs))
+            // unique candidate result for each section
             .map(|comp_cells| cell.unique_candidate(&comp_cells))
             // Fold the results of each section's unique_candidate results into one
             // TODO: how to properly deal with sections returning multiple errors
