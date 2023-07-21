@@ -6,19 +6,14 @@
 #![feature(generic_const_exprs)]
 #![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_array_assume_init)]
+#![feature(maybe_uninit_write_slice)]
 
 mod filters;
 mod finders;
 mod structs;
-pub use structs::*;
+mod test;
 mod utils;
 
 fn main() {
-    let mut cell = Cell::default();
-    cell.remove_candidate(Num::new(4).unwrap());
-    cell.remove_candidate(Num::new(5).unwrap());
-
-    println!("{}", !cell);
-
-    let _x = Idx::<9>::new(5_u8);
+    test::test();
 }

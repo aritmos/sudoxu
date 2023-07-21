@@ -6,6 +6,7 @@
 #![feature(generic_const_exprs)]
 #![feature(maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_array_assume_init)]
+#![feature(maybe_uninit_write_slice)]
 
 mod structs;
 pub use structs::*;
@@ -18,3 +19,6 @@ pub use filters::*;
 
 mod finders;
 pub use finders::*;
+
+mod test;
+pub use test::*;
