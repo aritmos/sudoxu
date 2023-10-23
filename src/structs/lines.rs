@@ -1,31 +1,36 @@
 use crate::structs::*;
-use std::mem::transmute;
+use std::mem::{transmute, MaybeUninit};
 
 /// A square whose rows or columns have been collapsed into one by folding with BITWISE OR
 #[derive(Clone, Copy)]
 pub struct SubSection([Cell; 3]);
 
+/// ```rust
+/// type Square = Section<{ SectionKind::Square }>;
+/// ```
+type Square = Section<{ SectionKind::Square }>;
+
+/// COMMENT: In the future this (along with other methods down the implementation chain)
+/// could be replaced by a SIMD version that works with all three Squares at the same time.
 impl Square {
-    /// Folds the rows and columns of a SQUARE using `OR`.
-    /// Rotates if required and returns `[rows, cols]`.
-    /// # Safety
-    /// This function should only be called on `Squares`
-    pub fn fold_into_subsections(self, rotate: bool) -> [Cell; 3] {
-        let cells = self.to_cells();
-        let rows = [
-            cells[0] | cells[1] | cells[2],
-            cells[3] | cells[4] | cells[5],
-            cells[6] | cells[7] | cells[8],
-        ];
-        let cols = [
-            cells[0] | cells[3] | cells[6],
-            cells[1] | cells[4] | cells[7],
-            cells[2] | cells[5] | cells[8],
-        ];
+    /// Folds the subsections of a Square using `OR`.
+    /// Folds columns if `rotate == false`, and rows if `rotate == true`.
+    pub fn fold_into_subsection(self, rotate: bool) -> SubSection {
+        let cells = self.cells;
         if !rotate {
-            rows
+            let rows = [
+                cells[0] | cells[1] | cells[2],
+                cells[3] | cells[4] | cells[5],
+                cells[6] | cells[7] | cells[8],
+            ];
+            SubSection(rows)
         } else {
-            cols
+            let cols = [
+                cells[0] | cells[3] | cells[6],
+                cells[1] | cells[4] | cells[7],
+                cells[2] | cells[5] | cells[8],
+            ];
+            SubSection(cols)
         }
     }
 }
@@ -36,6 +41,7 @@ impl From<SubSection> for [Cell; 3] {
     }
 }
 
+/// COMMENT: A SIMD implementation could work here -- doing groups of subsections at a time
 impl SubSection {
     /// Takes the three subsections of a square and a number `0 <= N <= 3`.
     /// Within each bit stores a `1` if we have seen `N` `1`s at that bit position,
@@ -85,9 +91,9 @@ pub type AreaIdx = Idx<6>;
 /// Represents a collection of 3 squares.
 /// ```rust
 /// pub struct Area {
+///     pub index: AreaIdx,          // its own `AreaIdx`, used for outputting `Filter`s
 ///     pub values: [SubSection; 3], // values of the three `Squares`
 ///     pub masks: [[Mask; 3]; 3],   // masks to create `Filter`s
-///     pub index: AreaIdx,          // its own `AreaIdx`, used for outputting `Filter`s
 /// }
 /// ```
 /// # Comment
@@ -114,21 +120,18 @@ pub type AreaIdx = Idx<6>;
 /// Keeps track of its `AreaIdx`.
 /// Used when getting indices to return the final `Filter`s.
 pub struct Area {
+    pub index: AreaIdx,
     pub values: [SubSection; 3],
     pub masks: [[Mask; 3]; 3],
-    pub index: AreaIdx,
 }
 
-// border chars: ─ │ ┌ ┐ ┘ └ ┼
-
-impl Grid {
+impl Area {
     /// Obtains the `Area` from within the `Grid`, rotating if necessary
-    pub fn get_area(&self, n: AreaIdx) -> Area {
-        let rotate = u8::from(n) < 3;
+    pub fn new(grid: &Grid, n: AreaIdx) -> Area {
         // get the cells in the 3 squares
         let square_idxs: [SectionIdx; 3] = unsafe {
-            std::mem::transmute(match u8::from(n) {
-                0 => [0_u8, 3, 6],
+            std::mem::transmute::<[u8; 3], _>(match u8::from(n) {
+                0 => [0, 3, 6],
                 1 => [1, 4, 7],
                 2 => [2, 5, 8],
                 3 => [0, 1, 2],
@@ -138,17 +141,15 @@ impl Grid {
             })
         };
 
-        let squares: [Square; 3] = square_idxs.map(|i| {
-            let cell_idxs = Grid::square_indices(i);
-            Square::new(self.get_cells(cell_idxs))
-        });
+        let squares: [Square; 3] = square_idxs.map(|i| Square::new(grid, i));
 
-        let values = squares.map(|s| SubSection(s.fold_into_subsections(rotate)));
+        let rotate = u8::from(n) < 3;
+        let values = squares.map(|s| s.fold_into_subsection(rotate));
 
         Area {
+            index: n,
             values,
             masks: Default::default(),
-            index: n,
         }
     }
 }
@@ -185,14 +186,10 @@ impl Area {
 
     /// Uses `Subsection::contains_count()` on each `Square`.
     pub fn get_count<const N: u8>(&self) -> [Cell; 3] {
-        self.values.map(|s| s.contain_count::<1>())
+        self.values.map(|s| s.contain_count::<N>())
     }
 
     /// Updates `values` using `masks`
-    /// # TODO
-    /// possibly flatten `self.values` and `self.masks` to begin with
-    /// # Comment
-    /// It seems that these transmutes are free looking at the asm output.
     pub fn update_values(&mut self) {
         let values: &mut [Cell; 27] = unsafe { transmute(&mut self.values) };
         // Making this a reference avoids copying the data.
@@ -221,13 +218,56 @@ impl Area {
             };
 
             let grid_idxs = squares_idxs.map(|square_idx| {
-                Grid::square_indices(unsafe { SectionIdx::new_unchecked(square_idx) })
+                let section_idx = unsafe { SectionIdx::new_unchecked(square_idx) };
+                Grid::section_grididxs(Square, section_idx)
             });
 
             unsafe { transmute(grid_idxs) }
         };
 
-        // let mut filters: [MaybeUninit<Filter>; 9] = MaybeUninit::uninit_array();
+        let masks: [Mask; 9] = unsafe { transmute(self.masks) };
+
+        let mask_idxs = if u8::from(self.index) > 2 {
+            [
+                0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8,
+            ]
+        } else {
+            [
+                2, 1, 0, 2, 1, 0, 2, 1, 0, 5, 4, 3, 5, 4, 3, 5, 4, 3, 8, 7, 6, 8, 7, 6, 8, 7, 6,
+            ]
+        };
+        let mut filters: [MaybeUninit<Filter>; 27] = MaybeUninit::uninit_array();
+        for (i, maybe_filter) in filters.iter_mut().enumerate() {
+            let filter = Filter {
+                mask: masks[mask_idxs[i]],
+                idx: grid_idxs_flattened[i],
+            };
+            MaybeUninit::write(maybe_filter, filter);
+        }
+        unsafe { MaybeUninit::array_assume_init(filters) }
+    }
+
+    pub fn get_filters_old(&self) -> [Filter; 27] {
+        // the 27 grid indexes pointing to the cells used to make `Area.values`
+        let grid_idxs_flattened: [GridIdx; 27] = {
+            let squares_idxs = match u8::from(self.index) {
+                0 => [0, 3, 6],
+                1 => [1, 4, 7],
+                2 => [2, 5, 8],
+                3 => [0, 1, 2],
+                4 => [3, 4, 5],
+                5 => [6, 7, 8],
+                _ => unreachable!(),
+            };
+
+            let grid_idxs = squares_idxs.map(|square_idx| {
+                let section_idx = unsafe { SectionIdx::new_unchecked(square_idx) };
+                Grid::section_grididxs(Square, section_idx)
+            });
+
+            unsafe { transmute(grid_idxs) }
+        };
+
         let masks: [Mask; 9] = unsafe { transmute(self.masks) };
 
         macro_rules! filter_builder {

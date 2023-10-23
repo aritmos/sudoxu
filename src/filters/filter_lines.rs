@@ -12,8 +12,7 @@ impl Area {
             let count_1 = self.get_count::<1>();
             let known = self.get_known();
 
-            let mut uninit_unknown_count_1s: [MaybeUninit<Cell>; 3] =
-                unsafe { MaybeUninit::uninit().assume_init() };
+            let mut uninit_unknown_count_1s: [MaybeUninit<Cell>; 3] = MaybeUninit::uninit_array();
             for (i, cell) in uninit_unknown_count_1s.iter_mut().enumerate() {
                 *cell = MaybeUninit::new(count_1[i] & !known[i]);
             }
@@ -61,10 +60,10 @@ impl Area {
                 let row_compliment_idxs = compliment_idxs(row_idx);
 
                 // apply masks
-                let mask = unsafe { Cell::new_unchecked(!(1 << num as u8)) };
+                let mask = unsafe { Cell::new_unchecked(!(1 << u8::from(num))) };
                 for i in subsection_compliment_idxs {
                     for j in row_compliment_idxs {
-                        self.masks[usize::from(i)][usize::from(j)] &= mask;
+                        self.masks[i][j] &= mask;
                     }
                 }
             }
@@ -93,7 +92,7 @@ impl Area {
 
         for (idx, contains_2_match) in contains_2_matches.into_iter().enumerate() {
             // skip to next pair if there are no matching candidates
-            if contains_2_match == unsafe { Cell::new_unchecked(0) } {
+            if contains_2_match == unsafe { Cell::zero() } {
                 continue;
             }
 
@@ -116,9 +115,9 @@ impl Area {
                 };
 
                 // apply masks
-                let mask = unsafe { Mask::new_unchecked(!(1 << num as u8)) };
+                let mask = unsafe { Mask::new_unchecked(!(1 << u8::from(num))) };
                 // the masked square index is given by `2-idx`: [0-1, 0-2, 1-2] => [2, 1, 0]
-                self.masks[2 - idx][usize::from(row_idx)] &= mask;
+                self.masks[2 - idx][row_idx] &= mask;
             }
         }
     }

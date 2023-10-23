@@ -1,93 +1,127 @@
 use crate::structs::*;
-use std::mem::transmute;
+use std::fmt::Display;
+use std::marker::ConstParamTy;
+use std::mem;
 
-/// Wrapper for `[Cell; 9]`. Representing rows, columns, and squares.
-#[derive(Clone, Copy)]
-pub struct Section([Cell; 9]);
-
-pub type Square = Section;
-
-pub enum SectionType {
+pub use SectionKind::{Column, Row, Square};
+#[derive(ConstParamTy, PartialEq, Eq, Clone, Copy)]
+pub enum SectionKind {
     Row,
     Column,
     Square,
 }
 
-impl Section {
-    pub fn new(cells: [Cell; 9]) -> Self {
-        unsafe { transmute(cells) }
-    }
+/// A Section of the Grid, i.e. a Row, Column or Square.
+/// # Comment:
+/// This const param definition allows for generic and specific implementations;
+/// as well as the more explicit nature of the Section type being part of the type
+/// ```rust
+/// impl<const K: SectionKind> Section<K> {/**/}
+/// impl Section<{ Row }> {/**/}
+/// ```
+pub struct Section<const K: SectionKind> {
+    idx: SectionIdx,
+    pub cells: [Cell; 9],
+}
 
-    pub fn to_cells(self) -> [Cell; 9] {
-        unsafe { transmute(self) }
-    }
-
-    pub fn to_string(self, section_type: SectionType) -> String {
-        match section_type {
-            SectionType::Row | SectionType::Column => format!(
-                "{} {} {} {} {} {} {} {} {}",
-                self.0[0],
-                self.0[1],
-                self.0[2],
-                self.0[3],
-                self.0[4],
-                self.0[5],
-                self.0[6],
-                self.0[7],
-                self.0[8]
-            ),
-            SectionType::Square => format!(
-                "{:^n$} {:^n$} {:^n$}\n{:^n$} {:^n$} {:^n$}\n{:^n$} {:^n$} {:^n$}",
-                self.0[0].to_string(),
-                self.0[1].to_string(),
-                self.0[2].to_string(),
-                self.0[3].to_string(),
-                self.0[4].to_string(),
-                self.0[5].to_string(),
-                self.0[6].to_string(),
-                self.0[7].to_string(),
-                self.0[8].to_string(),
-                n = 11
-            ),
+impl<const K: SectionKind> Section<K> {
+    pub fn new(grid: &Grid, section_idx: SectionIdx) -> Section<K> {
+        let section_grididxs = Grid::section_grididxs(K, section_idx);
+        let cells = grid.get_cells(section_grididxs);
+        Section::<K> {
+            idx: section_idx,
+            cells,
         }
     }
 }
 
+impl Display for Section<{ Row }> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {} {} {} {} {} {} {} {}",
+            self.cells[0],
+            self.cells[1],
+            self.cells[2],
+            self.cells[3],
+            self.cells[4],
+            self.cells[5],
+            self.cells[6],
+            self.cells[7],
+            self.cells[8]
+        )
+    }
+}
+
+impl Display for Section<{ Column }> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {} {} {} {} {} {} {} {}",
+            self.cells[0],
+            self.cells[1],
+            self.cells[2],
+            self.cells[3],
+            self.cells[4],
+            self.cells[5],
+            self.cells[6],
+            self.cells[7],
+            self.cells[8]
+        )
+    }
+}
+
+impl Display for Section<{ Square }> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:^n$} {:^n$} {:^n$}\n{:^n$} {:^n$} {:^n$}\n{:^n$} {:^n$} {:^n$}",
+            self.cells[0],
+            self.cells[1],
+            self.cells[2],
+            self.cells[3],
+            self.cells[4],
+            self.cells[5],
+            self.cells[6],
+            self.cells[7],
+            self.cells[8],
+            n = 11
+        )
+    }
+}
+
 /// SIMD Stuff
-mod simd {
+mod section_simd {
     pub use super::*;
     use std::arch::x86_64::*;
+    use std::simd::Simd; // requires `portable_simd`
 
-    impl From<Section> for __m256i {
-        #[inline]
-        fn from(value: Section) -> Self {
-            let values: &[u16] = unsafe { std::mem::transmute(value.0.as_slice()) };
+    /// A wrapper for `__m256i` containing `section.cells` as `[u16; 9]` in its first 18 bytes.
+    /// Zero filled in the remaining bytes.
+    pub struct SimdSection(__m256i);
 
+    impl<const K: SectionKind> From<Section<K>> for SimdSection {
+        fn from(value: Section<K>) -> Self {
             // extend array to [u16; 16] via a zero fill on RHS
-            let mut extended_section: [u16; 16] = [0; 16];
-            extended_section[..9].copy_from_slice(values);
+            let extended_section: [u16; 16] = {
+                let mut zeros = [0; 16];
+                zeros[..9].copy_from_slice(unsafe { &mem::transmute::<_, [u16; 9]>(value.cells) });
+                zeros
+            };
 
-            let value_vector = unsafe { _mm256_loadu_si256(extended_section.as_ptr() as *const _) };
-            // value_vector
-
-            // create a mask "[u16; 16]" with values in {0, u16::MAX} based on the value of the LSB in
-            // the original "[u16; 16]"
-            let mask = unsafe { _mm256_cmpgt_epi16(value_vector, _mm256_setzero_si256()) };
-
-            // result
-            unsafe { _mm256_andnot_si256(mask, value_vector) }
+            SimdSection(Simd::from(extended_section).into())
         }
     }
 
-    impl Section {
-        pub unsafe fn contains_mask(values: __m256i, n: Num) -> u16 {
-            let mask = 1 << n as i16;
+    impl SimdSection {
+        pub unsafe fn contains_mask(self, num: Num) -> u16 {
+            let mask = 1 << i16::from(num);
 
             // load the mask into the SIMD register
             let mask_vector = _mm256_set1_epi16(mask);
 
             // perform bitwise AND
-            let and_result = _mm256_and_si256(values, mask_vector);
+            let and_result = _mm256_and_si256(self.0, mask_vector);
 
             // compare the result against zero
             let zero_vector = _mm256_setzero_si256();
@@ -96,4 +130,4 @@ mod simd {
         }
     }
 }
-pub use simd::*;
+pub use section_simd::*;

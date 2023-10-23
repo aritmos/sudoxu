@@ -1,5 +1,4 @@
 use crate::structs::*;
-use crate::utils::array_pop;
 use std::mem::{transmute, MaybeUninit};
 
 // #[derive(Clone, Copy)]
@@ -26,13 +25,16 @@ pub type GridIdx = Idx<81>;
 /// 3 │ 4 │ 5
 /// ──┼───┼──
 /// 6 │ 7 │ 8
-/// # Inner square `SectionIdx`s:
+pub type SectionIdx = Idx<9>;
+
+/// InnerIdx are the indexes within a `Section`'s Cells
+/// # Square's `InnerIdx`s:
 /// 0 1 2 │ 0 1 2 │ 0 1 2
 /// 3 4 5 │ 3 4 5 │ 3 4 5
 /// 6 7 8 │ 6 7 8 │ 6 7 8
 /// ──────┼───────┼──────
 /// 0 1 2 │ ...
-pub type SectionIdx = Idx<9>;
+pub type InnerIdx = Idx<9>;
 
 impl Default for Grid {
     fn default() -> Self {
@@ -44,11 +46,11 @@ impl Grid {
     /// Get the Cell at index `idx`
     #[inline(always)]
     pub fn get(&self, idx: GridIdx) -> Cell {
-        self.0[usize::from(idx)]
+        self.0[idx]
     }
 
     pub fn get_mut(&mut self, idx: GridIdx) -> &mut Cell {
-        &mut self.0[usize::from(idx)]
+        &mut self.0[idx]
     }
 }
 
@@ -70,9 +72,12 @@ impl Grid {
 ///└───────────────────────┘
 impl std::fmt::Display for Grid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut out_string = String::new();
+        // Grid::default().to_string().len() == 602
+        let mut out_string = String::with_capacity(602);
         fn row_to_string(grid: &Grid, n: SectionIdx) -> String {
-            let row = grid.get_cells(Grid::row_indices(n)).map(char::from);
+            let row = grid
+                .get_cells(Grid::section_grididxs(Row, n))
+                .map(char::from);
             format!(
                 "│ {} {} {} │ {} {} {} │ {} {} {} │\n",
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]
@@ -98,56 +103,50 @@ impl std::fmt::Display for Grid {
 }
 
 impl Grid {
-    pub fn row_indices(n: SectionIdx) -> [GridIdx; 9] {
-        let arr: [u8; 9] = match u8::from(n) {
-            0 => [0, 1, 2, 3, 4, 5, 6, 7, 8],
-            1 => [9, 10, 11, 12, 13, 14, 15, 16, 17],
-            2 => [18, 19, 20, 21, 22, 23, 24, 25, 26],
-            3 => [27, 28, 29, 30, 31, 32, 33, 34, 35],
-            4 => [36, 37, 38, 39, 40, 41, 42, 43, 44],
-            5 => [45, 46, 47, 48, 49, 50, 51, 52, 53],
-            6 => [54, 55, 56, 57, 58, 59, 60, 61, 62],
-            7 => [63, 64, 65, 66, 67, 68, 69, 70, 71],
-            8 => [72, 73, 74, 75, 76, 77, 78, 79, 80],
-            _ => unreachable!(),
-        };
-
+    /// Returns the `GridIdx`s of the `Cell`s within the specified `Section`
+    pub fn section_grididxs(section_kind: SectionKind, section_idx: SectionIdx) -> [GridIdx; 9] {
+        const SECTIONS_GRIDIDXS: [[u8; 9]; 27] = [
+            // Rows
+            [0, 1, 2, 3, 4, 5, 6, 7, 8],
+            [9, 10, 11, 12, 13, 14, 15, 16, 17],
+            [18, 19, 20, 21, 22, 23, 24, 25, 26],
+            [27, 28, 29, 30, 31, 32, 33, 34, 35],
+            [36, 37, 38, 39, 40, 41, 42, 43, 44],
+            [45, 46, 47, 48, 49, 50, 51, 52, 53],
+            [54, 55, 56, 57, 58, 59, 60, 61, 62],
+            [63, 64, 65, 66, 67, 68, 69, 70, 71],
+            [72, 73, 74, 75, 76, 77, 78, 79, 80],
+            // Columns
+            [0, 9, 18, 27, 36, 45, 54, 63, 72],
+            [1, 10, 19, 28, 37, 46, 55, 64, 73],
+            [2, 11, 20, 29, 38, 47, 56, 65, 74],
+            [3, 12, 21, 30, 39, 48, 57, 66, 75],
+            [4, 13, 22, 31, 40, 49, 58, 67, 76],
+            [5, 14, 23, 32, 41, 50, 59, 68, 77],
+            [6, 15, 24, 33, 42, 51, 60, 69, 78],
+            [7, 16, 25, 34, 43, 52, 61, 70, 79],
+            [8, 17, 26, 35, 44, 53, 62, 71, 80],
+            // Squares
+            [0, 1, 2, 9, 10, 11, 18, 19, 20],
+            [3, 4, 5, 12, 13, 14, 21, 22, 23],
+            [6, 7, 8, 15, 16, 17, 24, 25, 26],
+            [27, 28, 29, 36, 37, 38, 45, 46, 47],
+            [30, 31, 32, 39, 40, 41, 48, 49, 50],
+            [33, 34, 35, 42, 43, 44, 51, 52, 53],
+            [54, 55, 56, 63, 64, 65, 72, 73, 74],
+            [57, 58, 59, 66, 67, 68, 75, 76, 77],
+            [60, 61, 62, 69, 70, 71, 78, 79, 80],
+        ];
+        let idx = 9 * match section_kind {
+            Row => 0,
+            Column => 1,
+            Square => 2,
+        } + u8::from(section_idx);
+        let arr: [u8; 9] = unsafe { *SECTIONS_GRIDIDXS.get_unchecked(idx as usize) };
         unsafe { transmute(arr) }
     }
 
-    pub fn col_indices(n: SectionIdx) -> [GridIdx; 9] {
-        let arr: [u8; 9] = match u8::from(n) {
-            0 => [0, 9, 18, 27, 36, 45, 54, 63, 72],
-            1 => [1, 10, 19, 28, 37, 46, 55, 64, 73],
-            2 => [2, 11, 20, 29, 38, 47, 56, 65, 74],
-            3 => [3, 12, 21, 30, 39, 48, 57, 66, 75],
-            4 => [4, 13, 22, 31, 40, 49, 58, 67, 76],
-            5 => [5, 14, 23, 32, 41, 50, 59, 68, 77],
-            6 => [6, 15, 24, 33, 42, 51, 60, 69, 78],
-            7 => [7, 16, 25, 34, 43, 52, 61, 70, 79],
-            8 => [8, 17, 26, 35, 44, 53, 62, 71, 80],
-            _ => unreachable!(),
-        };
-
-        unsafe { transmute(arr) }
-    }
-
-    pub fn square_indices(n: SectionIdx) -> [GridIdx; 9] {
-        let arr: [u8; 9] = match u8::from(n) {
-            0 => [0, 1, 2, 9, 10, 11, 18, 19, 20],
-            1 => [3, 4, 5, 12, 13, 14, 21, 22, 23],
-            2 => [6, 7, 8, 15, 16, 17, 24, 25, 26],
-            3 => [27, 28, 29, 36, 37, 38, 45, 46, 47],
-            4 => [30, 31, 32, 39, 40, 41, 48, 49, 50],
-            5 => [33, 34, 35, 42, 43, 44, 51, 52, 53],
-            6 => [54, 55, 56, 63, 64, 65, 72, 73, 74],
-            7 => [57, 58, 59, 66, 67, 68, 75, 76, 77],
-            8 => [60, 61, 62, 69, 70, 71, 78, 79, 80],
-            _ => unreachable!(),
-        };
-        unsafe { transmute(arr) }
-    }
-
+    /*
     /// Returns the `SectionIdx`s of a given GridIdx in the order:
     /// `[Row, Column, Square, InnerSquare]`.
     ///
@@ -174,7 +173,6 @@ impl Grid {
         [row_idx, col_idx, square_idx, inner_square_idx]
             .map(|i| unsafe { SectionIdx::new_unchecked(i) })
     }
-
     /// Returns the complimentary indices within the cells row, column and square. (all neighboring
     /// cell's indices)
     /// # Example (see `GridIdx`; the casts to `Idx` are excluded for clarity)
@@ -201,12 +199,13 @@ impl Grid {
 
         [row_comp_idxs, col_comp_idxs, square_comp_idxs]
     }
+    */
 }
 
 impl Grid {
     /// Obtain (a copy of) the cells given a slice of indices into the grid
     pub fn get_cells<const N: usize>(&self, indices: [GridIdx; N]) -> [Cell; N] {
-        let mut cells: [MaybeUninit<Cell>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+        let mut cells: [MaybeUninit<Cell>; N] = MaybeUninit::uninit_array();
         for (cell, i) in cells.iter_mut().zip(indices) {
             *cell = MaybeUninit::new(self.get(i));
         }

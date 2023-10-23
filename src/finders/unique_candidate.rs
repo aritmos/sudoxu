@@ -1,21 +1,24 @@
 #![allow(unused)]
 use crate::structs::*;
 
+/// Inner index within a `Section`
+type InnerIdx = Idx<9>;
+
 /// Unique Candidate:
-/// When within a row, column or square only one cell can contain a given number;
-
-impl Cell {
-    /// Finds if a `Cell` contains a unique candidate when compared against the given slice.
-    /// Returns a `CellError::MultipleSoleCandidates` if there are multiple candidates.
-    pub fn unique_candidate(self, arr: &[Cell]) -> CellResult {
-        // combine all other candidate cells
-        let combined_candidates = arr
+/// When within a `Section`, a specific `Cell` contains the only candidate for a certain `Num`.
+impl<const K: SectionKind> Section<K> {
+    fn unique_candidate(self, inner_idx: InnerIdx) -> CellResult {
+        let (candidate_cell, remaining_cells) = {
+            let mut cells = self.cells;
+            let cell = cells[inner_idx];
+            cells[inner_idx] = unsafe { Cell::zero() };
+            (cell, cells)
+        };
+        let combined_candidates = remaining_cells
             .iter()
-            .fold(unsafe { Self::new_unchecked(0) }, |a, b| a | *b)
-            & Self::default();
+            .fold(unsafe { Cell::zero() }, |a, b| a | *b);
 
-        // find which bits only exist in `self`
-        let sole_candidates = ((self ^ combined_candidates) & self).to_u16();
+        let sole_candidates = ((candidate_cell ^ combined_candidates) & candidate_cell).to_u16();
 
         match sole_candidates.count_ones() {
             0 => Ok(None),
@@ -34,6 +37,8 @@ impl Grid {
     /// grid. i.e. apply `Cell::unique_candidate` within each `Section` containing the `Cell` and
     /// combine the results.
     pub fn unique_candidate(&self, idx: GridIdx) -> CellResult {
+        todo!("rewrite to remove compliment indices");
+        /*
         let cell = self.get(idx);
 
         Grid::compliment_indices(idx)
@@ -57,5 +62,6 @@ impl Grid {
                     }
                 }
             })
+        */
     }
 }

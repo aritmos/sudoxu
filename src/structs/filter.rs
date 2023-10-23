@@ -21,7 +21,7 @@ impl Num {
     /// ```
     #[inline]
     pub fn to_mask(self) -> Mask {
-        unsafe { Mask::new_unchecked(1 << self as u8) }
+        unsafe { Mask::new_unchecked(1 << u8::from(self)) }
     }
 
     /// Creates a negative `Mask` from a `Num`.
@@ -37,7 +37,7 @@ impl Num {
     /// via bitwise `AND`, such that prohibitted bits never get set to `1`.
     #[inline]
     pub fn to_neg_mask(self) -> Mask {
-        unsafe { Mask::new_unchecked(!(1 << self as u8)) }
+        unsafe { Mask::new_unchecked(!(1 << u8::from(self))) }
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::structs::*;
 use std::fmt::{Debug, Display};
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
+use std::ops::{Deref, DerefMut};
 
 /// A u16 with the following bit representation:
 /// (000 000) 0 0 0  0 0 0  0 0 0  0
@@ -23,11 +24,18 @@ pub enum CellError {
 /// Err if multiple or no possible candidates
 pub type CellResult = Result<Option<Num>, CellError>;
 
-impl std::ops::Deref for Cell {
+/// Allows us to use `u16` methods on `Cell`
+impl Deref for Cell {
     type Target = u16;
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for Cell {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -63,24 +71,21 @@ impl Cell {
 
     /// Returns a `Cell` representing a known `n`.
     pub fn new_known(n: Num) -> Cell {
-        let inner: u16 = (1 << n as u16) | 1;
+        let inner: u16 = (1 << u16::from(n)) | 1;
         unsafe { Cell::new_unchecked(inner) }
     }
 
     pub fn from_candidates(candidates: &[Num]) -> Self {
         let mut cell_u16: u16 = 0;
         for num in candidates {
-            cell_u16 |= 1 << *num as u8;
+            cell_u16 |= 1 << u8::from(*num);
         }
         Self(cell_u16)
     }
 
-    pub fn get_mut(&mut self) -> &mut u16 {
-        &mut self.0
-    }
-
-    /// # Comment
-    /// Ends up being optimized to be the same as directly working with a `u16`
+    /// Equivalent functionality to dereferncing.
+    /// Used to better showcase intent within the code.
+    /// This operation is zero cost as far as I can see.
     #[inline]
     pub fn to_u16(self) -> u16 {
         self.0
@@ -106,7 +111,7 @@ impl Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let cell_u16 = self.to_u16();
         if cell_u16 % 2 == 1 {
-            write!(f, "{}", cell_u16.ilog2().to_string())
+            write!(f, "{}", cell_u16.ilog2())
         } else {
             let mut cell_str = String::new();
             for i in 1..=9 {
@@ -144,7 +149,9 @@ impl TryFrom<&str> for Cell {
         match s.len() {
             // known cell or blank
             1 => {
-                let Ok(n) = s.parse::<u8>() else {return Err(CellError::ParseError)};
+                let Ok(n) = s.parse::<u8>() else {
+                    return Err(CellError::ParseError);
+                };
                 match n {
                     0 => Ok(Cell::default()), // treat `0` as all possible candidates
                     n => Ok(Cell::new_known(unsafe { Num::new_unchecked(n) })),
@@ -191,13 +198,13 @@ impl BitAnd for Cell {
     type Output = Cell;
 
     fn bitand(self, rhs: Self) -> Self::Output {
-        unsafe { Cell::new_unchecked(self.to_u16() & rhs.to_u16()) }
+        unsafe { Cell::new_unchecked(*self & *rhs) }
     }
 }
 
 impl BitAndAssign for Cell {
     fn bitand_assign(&mut self, rhs: Self) {
-        *self.get_mut() &= rhs.to_u16();
+        **self = *rhs;
     }
 }
 
@@ -205,13 +212,13 @@ impl BitOr for Cell {
     type Output = Cell;
 
     fn bitor(self, rhs: Self) -> Self::Output {
-        unsafe { Cell::new_unchecked(self.to_u16() | rhs.to_u16()) }
+        unsafe { Cell::new_unchecked(*self | *rhs) }
     }
 }
 
 impl BitOrAssign for Cell {
     fn bitor_assign(&mut self, rhs: Self) {
-        *self.get_mut() |= rhs.to_u16();
+        **self |= *rhs;
     }
 }
 
@@ -219,13 +226,13 @@ impl BitXor for Cell {
     type Output = Cell;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
-        unsafe { Cell::new_unchecked(self.to_u16() ^ rhs.to_u16()) }
+        unsafe { Cell::new_unchecked(*self ^ *rhs) }
     }
 }
 
 impl BitXorAssign for Cell {
     fn bitxor_assign(&mut self, rhs: Self) {
-        *self.get_mut() ^= rhs.to_u16();
+        **self ^= *rhs;
     }
 }
 
@@ -242,10 +249,10 @@ impl Not for Cell {
     ///
     /// # Examples
     /// ```rust
-    /// assert_eq!(!Cell::new(0b000000_111000000_0), Cell::new(0b000000_000111111_0))
-    /// assert_eq!(!Cell::new(0b000000_101010101_0), Cell::new(0b000000_010101010_0))
+    /// assert_eq!(!Cell::new(0b111_000_000_0), Cell::new(0b000_111_111_0))
+    /// assert_eq!(!Cell::new(0b101_010_101_0), Cell::new(0b010_101_010_0))
     /// // Technically invalid `Cell` state output:
-    /// assert_eq!(!Cell::new(0b000000_111111111_0), Cell::new(0b000000_000000000_0))
+    /// assert_eq!(!Cell::new(0b111_111_111_0), Cell::new(0b000_000_000_0))
     /// ```
     fn not(self) -> Self::Output {
         self ^ Self::default()
@@ -254,14 +261,9 @@ impl Not for Cell {
 
 /// Functionality implementations
 impl Cell {
-    #[inline]
+    #[inline(always)]
     pub fn is_known(self) -> bool {
         self.0 % 2 == 1
-    }
-
-    // removes Num from the candidates in Self
-    pub fn remove_candidate(&mut self, num: Num) {
-        *self &= num.to_neg_mask();
     }
 
     pub fn contains_candidate(self, num: Num) -> bool {
@@ -270,7 +272,7 @@ impl Cell {
 
     /// Returns a "`Cell`" whose candidates are the known numbers within the provided slice
     pub fn combine_known(cells: &[Cell]) -> Cell {
-        let mut known = unsafe { Cell::new_unchecked(0) };
+        let mut known = unsafe { Cell::zero() };
         for cell in cells {
             if cell.is_known() {
                 known |= *cell;
@@ -280,9 +282,24 @@ impl Cell {
         known
     }
 
-    /// Finds if any Cell in the slice can hold a certain Num
-    pub fn contains(cells: &[Cell], n: Num) -> bool {
-        let combined_u16 = cells.iter().map(|&c| c.to_u16()).fold(0, |a, b| a | b);
-        combined_u16 & (1 << n as u8) != 0
+    /// Wrapper for `Cell::new_unchecked(0)`
+    /// # Safety
+    /// This is an INVALID `Cell` REPRESENTATION meant to be ONLY used within calculations/accumulations.
+    /// Caller guarantees that this form of a `Cell` is only used witihn such cases
+    /// and is never returned or used as an actual `Cell`.
+    #[inline(always)]
+    pub unsafe fn zero() -> Cell {
+        Cell::new_unchecked(0)
+    }
+
+    /// Turns a known `Cell` into a `Num`.
+    /// # Safety
+    /// Function doesn't check if the `Cell` is actually known
+    /// (only contains a single candidate),
+    /// and simply takes the largest candidate.
+    /// The caller ensures that the `Cell` is known.
+    pub unsafe fn known_to_num(self) -> Num {
+        let n = self.ilog2() as u8;
+        unsafe { Num::new_unchecked(n) }
     }
 }

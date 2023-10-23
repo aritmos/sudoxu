@@ -12,7 +12,9 @@ impl Cell {
 
         // same assembly if we use `is_power_of_two()`
         if cell_u16.count_ones() == 1 {
-            Ok(Some(unsafe { Num::new_unchecked(cell_u16.ilog2() as u8) }))
+            let n = cell_u16.ilog2() as u8;
+            let num = unsafe { Num::new_unchecked(n) };
+            Ok(Some(num))
         } else {
             Ok(None)
         }
