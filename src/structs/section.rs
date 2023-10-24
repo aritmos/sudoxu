@@ -1,99 +1,51 @@
-use crate::structs::*;
-use std::mem::transmute;
+use super::{
+    cell::Cell,
+    grid::Grid,
+    idx::{GridIdx, SectionIdx},
+};
 
-/// Wrapper for `[Cell; 9]`. Representing rows, columns, and squares.
-#[derive(Clone, Copy)]
-pub struct Section([Cell; 9]);
+use std::mem::MaybeUninit;
 
-pub type Square = Section;
-
-pub enum SectionType {
+pub enum SectionKind {
     Row,
     Column,
-    Square,
+    Box,
 }
 
-impl Section {
-    pub fn new(cells: [Cell; 9]) -> Self {
-        unsafe { transmute(cells) }
-    }
+// Expose the enum variants for easier readability
+pub use SectionKind::{Box, Column, Row};
 
-    pub fn to_cells(self) -> [Cell; 9] {
-        unsafe { transmute(self) }
-    }
+// # Comment:
+// This const param definition allows for generic and specific implementations;
+// as well as the more explicit nature of the Section type being part of the type
+// ```rust
+// impl<const K: SectionKind> Section<K> {/**/}
+// impl Section<{ Row }> {/**/}
+// ```
+/// A Section of the Grid, i.e. a Row, Column or Square.
+/// # Note
+/// Current implementation is generic over `u8`.
+/// The correct implementation would be to be generic over `SectionIdx`,
+/// but this is currently within the incomplete `adt_const_params` feature.
+/// # Safety
+/// `Section`'s generic `K` should only ever be constructed from `SectionIdx`:
+/// by writing `Section::<{Row as u8}>`, etc.
+#[derive(Debug)]
+pub struct Section<const K: u8> {
+    // idx: SectionIdx,
+    pub cells: [Cell; 9],
+}
 
-    pub fn to_string(self, section_type: SectionType) -> String {
-        match section_type {
-            SectionType::Row | SectionType::Column => format!(
-                "{} {} {} {} {} {} {} {} {}",
-                self.0[0],
-                self.0[1],
-                self.0[2],
-                self.0[3],
-                self.0[4],
-                self.0[5],
-                self.0[6],
-                self.0[7],
-                self.0[8]
-            ),
-            SectionType::Square => format!(
-                "{:^n$} {:^n$} {:^n$}\n{:^n$} {:^n$} {:^n$}\n{:^n$} {:^n$} {:^n$}",
-                self.0[0].to_string(),
-                self.0[1].to_string(),
-                self.0[2].to_string(),
-                self.0[3].to_string(),
-                self.0[4].to_string(),
-                self.0[5].to_string(),
-                self.0[6].to_string(),
-                self.0[7].to_string(),
-                self.0[8].to_string(),
-                n = 11
-            ),
+impl<const K: u8> Section<K> {
+    pub fn new(grid: &Grid, section_idx: SectionIdx) -> Section<K> {
+        let grid_idxs = Grid::get_section_grididxs(Row, section_idx);
+        let mut uninit_cells: [MaybeUninit<Cell>; 9] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+        for (cell, grid_idx) in uninit_cells.iter_mut().zip(grid_idxs) {
+            *cell = MaybeUninit::new(grid.get(grid_idx));
+        }
+        Section::<K> {
+            cells: unsafe { std::mem::transmute(uninit_cells) },
         }
     }
 }
-
-/// SIMD Stuff
-mod simd {
-    pub use super::*;
-    use std::arch::x86_64::*;
-
-    impl From<Section> for __m256i {
-        #[inline]
-        fn from(value: Section) -> Self {
-            let values: &[u16] = unsafe { std::mem::transmute(value.0.as_slice()) };
-
-            // extend array to [u16; 16] via a zero fill on RHS
-            let mut extended_section: [u16; 16] = [0; 16];
-            extended_section[..9].copy_from_slice(values);
-
-            let value_vector = unsafe { _mm256_loadu_si256(extended_section.as_ptr() as *const _) };
-            // value_vector
-
-            // create a mask "[u16; 16]" with values in {0, u16::MAX} based on the value of the LSB in
-            // the original "[u16; 16]"
-            let mask = unsafe { _mm256_cmpgt_epi16(value_vector, _mm256_setzero_si256()) };
-
-            // result
-            unsafe { _mm256_andnot_si256(mask, value_vector) }
-        }
-    }
-
-    impl Section {
-        pub unsafe fn contains_mask(values: __m256i, n: Num) -> u16 {
-            let mask = 1 << n as i16;
-
-            // load the mask into the SIMD register
-            let mask_vector = _mm256_set1_epi16(mask);
-
-            // perform bitwise AND
-            let and_result = _mm256_and_si256(values, mask_vector);
-
-            // compare the result against zero
-            let zero_vector = _mm256_setzero_si256();
-            let cmp_result = _mm256_cmpeq_epi16(and_result, zero_vector);
-            !(_mm256_movemask_epi8(cmp_result) as u16)
-        }
-    }
-}
-pub use simd::*;
