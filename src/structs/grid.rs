@@ -3,7 +3,7 @@ mod fmt;
 use super::{
     cell::Cell,
     idx::{GridIdx, SectionIdx},
-    section::SectionKind,
+    section::{Section, SectionKind},
 };
 
 /// The sudoku Grid.
@@ -40,7 +40,7 @@ impl Grid {
 
 // Section Related
 impl Grid {
-    pub fn get_section_grididxs(k: SectionKind, i: SectionIdx) -> [GridIdx; 9] {
+    fn get_section_grididxs(k: SectionKind, i: SectionIdx) -> [GridIdx; 9] {
         const SECTION_GRIDIDXS: [[usize; 9]; 27] = [
             // Rows
             [0, 1, 2, 3, 4, 5, 6, 7, 8],
@@ -76,6 +76,21 @@ impl Grid {
         let usize_section_grididxs = SECTION_GRIDIDXS[k as usize * 9 + usize::from(i)];
         unsafe { std::mem::transmute(usize_section_grididxs) }
     }
+
+    pub fn section(&self, section_kind: SectionKind, section_idx: SectionIdx) -> Section {
+        use std::mem::MaybeUninit;
+        let grid_idxs = Grid::get_section_grididxs(SectionKind::Row, section_idx);
+        let mut uninit_cells: [MaybeUninit<Cell>; 9] =
+            unsafe { MaybeUninit::uninit().assume_init() };
+        for (cell, grid_idx) in uninit_cells.iter_mut().zip(grid_idxs) {
+            *cell = MaybeUninit::new(self.get(grid_idx));
+        }
+
+        let cells: [Cell; 9] = 
+             unsafe { std::mem::transmute(uninit_cells) };
+
+        Section::new(section_kind, cells)
+    }
 }
 
 #[cfg(test)]
@@ -84,18 +99,22 @@ mod tests {
     #[test]
     fn section_grididxs() {
         use super::SectionKind::*;
-        let grididxs = Grid::get_section_grididxs(Row, SectionIdx::try_from(0_usize).unwrap());
-        let expect = [0_usize, 1, 2, 3, 4, 5, 6, 7, 8].map(|i| GridIdx::try_from(i).unwrap());
+
+        let idx = SectionIdx::new(0_usize).unwrap();
+        let grididxs = Grid::get_section_grididxs(Row, idx);
+        let expect = [0_usize, 1, 2, 3, 4, 5, 6, 7, 8].map(|i| GridIdx::new(i).unwrap());
         assert_eq!(grididxs, expect);
 
-        let grididxs = Grid::get_section_grididxs(Column, SectionIdx::try_from(2_usize).unwrap());
+        let idx = SectionIdx::new(2_usize).unwrap();
+        let grididxs = Grid::get_section_grididxs(Column, idx);
         let expect =
-            [2_usize, 11, 20, 29, 38, 47, 56, 65, 74].map(|i| GridIdx::try_from(i).unwrap());
+            [2_usize, 11, 20, 29, 38, 47, 56, 65, 74].map(|i| GridIdx::new(i).unwrap());
         assert_eq!(grididxs, expect);
 
-        let grididxs = Grid::get_section_grididxs(Box, SectionIdx::try_from(8_usize).unwrap());
+        let idx = SectionIdx::new(8_usize).unwrap();
+        let grididxs = Grid::get_section_grididxs(Box, idx);
         let expect =
-            [60_usize, 61, 62, 69, 70, 71, 78, 79, 80].map(|i| GridIdx::try_from(i).unwrap());
+            [60_usize, 61, 62, 69, 70, 71, 78, 79, 80].map(|i| GridIdx::new(i).unwrap());
         assert_eq!(grididxs, expect);
     }
 }

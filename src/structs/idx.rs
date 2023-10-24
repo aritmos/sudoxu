@@ -48,24 +48,19 @@ pub type InnerIdx = Idx<9>;
 
 impl<const N: usize> Idx<N> {
     /// Tries to create an `Idx<N>` from a _uint_.
-    /// # Note
-    /// This is effectively a direct implementation of
-    /// `impl<T: Into<usize>, const N: usize> TryFrom<T> for Idx<N>`,
-    /// done to avoid the need to cover the type parameters.
-    /// As such, while the function signature would be cleaner as an Option,
-    /// it has been made to match the return of a `TryFrom` implementation.
-    pub fn try_from<T: Into<usize>>(t: T) -> Result<Self, ()> {
+    /// Returns None if the number is too large.
+    pub fn new<T: Into<usize>>(t: T) -> Option<Self> {
         let n = t.into();
         if n < N {
-            Ok(Self(n))
+            Some(Self(n))
         } else {
-            Err(())
+            None
         }
     }
 
     /// Create an `Idx<N>` from a `usize`
-    /// TODO
-    pub unsafe fn from_unchecked<T: Into<usize>>(t: T) -> Self {
+    /// Safety: Does not do the bounds check.
+    pub unsafe fn new_unchecked<T: Into<usize>>(t: T) -> Self {
         Self(t.into())
     }
 }
