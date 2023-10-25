@@ -1,5 +1,5 @@
-mod cell;
-mod grid;
-mod idx;
-mod num;
-mod section;
+pub mod cell;
+pub mod grid;
+pub mod idx;
+pub mod num;
+pub mod section;
