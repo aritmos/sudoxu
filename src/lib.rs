@@ -1,4 +1,5 @@
 #![allow(unused)]
+#![allow(clippy::unusual_byte_groupings)]
 mod finders;
 mod structs;
 mod tests;

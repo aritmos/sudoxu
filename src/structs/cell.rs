@@ -37,16 +37,11 @@ pub struct Cell(u16);
 #[derive(Debug)]
 pub enum CandidateError {
     ParseError,
-    BannedBits,             // Cell >= 1024 (= 2^10)
-    KnownNoNum,             // Cell == 1
-    KnownMultipleNum,       // Cell % 2 == 1 && !(Cell - 1).is_power_of_two()
-    NoCandidates,           // Cell == 0
-    MultipleSoleCandidates, // Multiple single candidates within sections
+    BannedBits,       // Cell >= 1024 (= 2^10)
+    KnownNoNum,       // Cell == 1
+    KnownMultipleNum, // Cell % 2 == 1 && !(Cell - 1).is_power_of_two() or multiple unique candidates
+    NoCandidates,     // Cell == 0
 }
-
-/// Option<Num> to signify zero or one sole candidates
-/// Err if multiple or no possible candidates
-// pub type CandidateResult = Result<Option<Num>, CandidateError>;
 
 impl Default for Cell {
     fn default() -> Self {
@@ -56,28 +51,31 @@ impl Default for Cell {
 }
 
 impl Cell {
+    /// Checks if a given `Cell` has an allowed representation.
+    pub fn check(&self) -> Result<(), CandidateError> {
+        let self_u16 = self.to_u16();
+        if self_u16 == 0 {
+            return Err(CandidateError::NoCandidates);
+        }
+        if self_u16 >= 1024 {
+            return Err(CandidateError::BannedBits);
+        }
+        if self_u16 % 2 != 1 {
+            return Ok(());
+        }
+        match self_u16.count_ones() {
+            0 => unreachable!(),
+            1 => Err(CandidateError::NoCandidates),
+            2 => Ok(()),
+            _ => Err(CandidateError::KnownMultipleNum),
+        }
+    }
+
     /// Creates a new Cell, which can either contain multiple candidates or be known.
     /// Errors if provided with a single candidate but the _known bit_ is not set.
     pub fn new(n: u16) -> Result<Self, CandidateError> {
-        // u16 cant be too small or too large
-        match n {
-            0 => return Err(CandidateError::NoCandidates),
-            1024.. => return Err(CandidateError::BannedBits),
-            _ => (),
-        }
-
-        // unknown cell
-        if n % 2 != 1 {
-            return Ok(Self(n));
-        }
-
-        // known cell
-        match n.count_ones() {
-            0 => unreachable!(),
-            1 => Err(CandidateError::KnownNoNum),
-            2 => Ok(Self(n)),
-            3.. => Err(CandidateError::KnownMultipleNum),
-        }
+        let cell = unsafe { Self::new_unchecked(n) };
+        cell.check().map(|_| cell)
     }
 
     /// Creates a new `Cell`, which can either contain multiple candidates or be known.
@@ -106,5 +104,9 @@ impl Cell {
     #[inline]
     pub fn is_known(&self) -> bool {
         self.0 & 1 != 0
+    }
+
+    pub unsafe fn zerod() -> Cell {
+        return Cell::new_unchecked(0_u16);
     }
 }
