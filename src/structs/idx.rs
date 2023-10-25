@@ -1,50 +1,13 @@
+pub mod idxs;
+pub use idxs::*;
+mod fmt;
+
 use std::ops::{Index, IndexMut};
 
 /// A number `x` guaranteed to satisfy `x < N`.
 /// Used for indexing into arrays without fearing for out-of-bounds indexing.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Idx<const N: usize>(usize);
-
-/// An index into the cells of a grid:
-/// ```txt
-/// 00 01 02 │ 03 04 05 │ 06 07 08
-/// 09 10 11 │ 12 13 14 │ 15 16 17
-/// 18 19 20 │ 21 22 23 │ 24 25 26
-/// ─────────┼──────────┼─────────
-/// 27 28 29 │ 30 31 32 │ 33 34 35
-/// 36 37 38 │ 39 40 41 │ 42 43 44
-/// 45 46 47 │ 48 49 50 │ 51 52 53
-/// ─────────┼──────────┼─────────
-/// 54 55 56 │ 57 58 59 │ 60 61 62
-/// 63 64 65 │ 66 67 68 │ 69 70 71
-/// 72 73 74 │ 75 76 77 │ 78 79 80
-/// ```
-pub type GridIdx = Idx<81>;
-
-/// An index into the sections of a grid.
-/// For rows and columns, these are their own row and column number (zero indexed) starting from
-/// the top and left.
-/// For boxes these are:
-/// ```txt
-/// 0 │ 1 │ 2
-/// ──┼───┼──
-/// 3 │ 4 │ 5
-/// ──┼───┼──
-/// 6 │ 7 │ 8
-/// ```
-pub type SectionIdx = Idx<9>;
-
-/// An index into a `Section`'s Cells.
-/// For rows(columns) these are their cell's column(row) `SectionIdx`.
-/// For boxes these are:
-/// ```txt
-/// 0 1 2 │ 0 1 2 │ 0 1 2
-/// 3 4 5 │ 3 4 5 │ 3 4 5
-/// 6 7 8 │ 6 7 8 │ 6 7 8
-/// ──────┼───────┼──────
-/// 0 1 2 │  ...  │
-/// ```
-pub type InnerIdx = Idx<9>;
 
 impl<const N: usize> Idx<N> {
     /// Tries to create an `Idx<N>` from a _uint_.
@@ -58,8 +21,11 @@ impl<const N: usize> Idx<N> {
         }
     }
 
-    /// Create an `Idx<N>` from a `usize`
-    /// Safety: Does not do the bounds check.
+    /// Create an `Idx<N>` from a `usize`.
+    ///
+    /// Does not do the bounds check.
+    /// # Safety
+    /// Caller guarantees that `t.into() < N`.
     pub unsafe fn new_unchecked<T: Into<usize>>(t: T) -> Self {
         Self(t.into())
     }

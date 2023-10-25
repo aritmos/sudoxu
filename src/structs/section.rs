@@ -1,4 +1,7 @@
-use super::{cell::Cell, idx::SectionIdx};
+use super::{
+    cell::Cell,
+    idx::{InnerIdx, SectionIdx},
+};
 
 #[derive(Debug)]
 pub struct Section {
@@ -6,13 +9,14 @@ pub struct Section {
     pub cells: [Cell; 9],
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+/// Information to identify a Section within the grid.
 pub struct SectionInfo {
     pub kind: SectionKind,
     pub idx: SectionIdx,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum SectionKind {
     Row = 0,
     Column = 1,

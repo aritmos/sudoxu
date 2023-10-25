@@ -3,9 +3,10 @@
 
 use crate::{
     cell::{CandidateError, Cell},
+    grid::Grid,
     idx::{GridIdx, InnerIdx},
     num::Num,
-    section::Section,
+    section::{Section, SectionInfo, SectionKind::*},
 };
 
 impl Section {
@@ -35,7 +36,45 @@ impl Section {
                 let num = unsafe { Num::new_unchecked(n) };
                 Ok(Some(num))
             }
-            _ => Err(CandidateError::KnownMultipleNum),
+            _ => Err(CandidateError::MultipleUniqueCandidates),
         }
+    }
+}
+
+impl Grid {
+    /// Checks if a `Cell` contains a unique candidate within its selected `Section`s.
+    ///
+    /// `sections`' `[bool; 3]` represents selecting the `Cell`'s row, column and box
+    /// respectively to be tested against for unique candidates.
+    ///
+    /// Ability to opt-out of `Section`s allows to optimize repeated calls to the function.
+    pub fn unique_candidate(
+        &self,
+        grid_idx: GridIdx,
+        section_select: [bool; 3],
+    ) -> Result<Option<Num>, CandidateError> {
+        let idx_info = grid_idx.associated_idxs();
+
+        let mut result = Ok(None);
+
+        for (section_kind, section_idx, inner_idx) in section_select
+            .into_iter()
+            .zip([Row, Column, Box])
+            .zip(idx_info)
+            .filter_map(|((s, k), (si, ii))| s.then_some((k, si, ii)))
+        {
+            let section_info = SectionInfo::new(section_kind, section_idx);
+            let section = self.section(section_info);
+            let section_result = section.unique_candidate(inner_idx);
+            match (result, section_result) {
+                (Ok(None), Ok(None)) => (),
+                (Ok(Some(_)), Ok(None)) => (),
+                (Ok(None), Ok(Some(_))) => result = section_result,
+                (Ok(Some(a)), Ok(Some(b))) if a == b => (),
+                _ => return Err(CandidateError::MultipleUniqueCandidates),
+            }
+        }
+
+        result
     }
 }

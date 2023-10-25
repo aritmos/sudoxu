@@ -34,13 +34,14 @@ mod fmt;
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Cell(u16);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum CandidateError {
     ParseError,
-    BannedBits,       // Cell >= 1024 (= 2^10)
-    KnownNoNum,       // Cell == 1
-    KnownMultipleNum, // Cell % 2 == 1 && !(Cell - 1).is_power_of_two() or multiple unique candidates
-    NoCandidates,     // Cell == 0
+    BannedBits,               // Cell >= 1024 (= 2^10)
+    KnownNoNum,               // Cell == 1
+    KnownMultipleNum,         // Cell % 2 == 1 && !(Cell - 1).is_power_of_two()
+    NoCandidates,             // Cell == 0
+    MultipleUniqueCandidates, // Multiple unique candidates within neighbors.
 }
 
 impl Default for Cell {
@@ -106,7 +107,12 @@ impl Cell {
         self.0 & 1 != 0
     }
 
+    /// Wrapper for `Cell::new_unchecked(0)`
+    /// # Safety
+    /// This is an INVALID `Cell` REPRESENTATION meant to be ONLY used within calculations/accumulations.
+    /// Caller guarantees that this form of a `Cell` is only used witihn such cases
+    /// and is never returned or used as an actual `Cell`.
     pub unsafe fn zerod() -> Cell {
-        return Cell::new_unchecked(0_u16);
+        Cell::new_unchecked(0_u16)
     }
 }
