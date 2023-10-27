@@ -1,7 +1,7 @@
 //! Unique Candidate:
 //! When within a `Section`, a given `Cell` contains the only candidate for a certain `Num`.
 
-use crate::{
+use crate::structs::{
     cell::{CandidateError, Cell},
     grid::Grid,
     idx::{GridIdx, InnerIdx},
@@ -42,7 +42,7 @@ impl Section {
 }
 
 impl Grid {
-    /// Checks if a `Cell` contains a unique candidate within its selected `Section`s.
+    /// Checks if a `Cell` contains a unique candidate within its three `Section`s.
     ///
     /// `sections`' `[bool; 3]` represents selecting the `Cell`'s row, column and box
     /// respectively to be tested against for unique candidates.

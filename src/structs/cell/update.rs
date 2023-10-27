@@ -1,7 +1,7 @@
 //! Updating Cells
 
 use super::Cell;
-use crate::num::Num;
+use crate::structs::num::Num;
 
 impl Cell {
     /// Sets the known bit of the given cell.

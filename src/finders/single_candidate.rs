@@ -1,7 +1,7 @@
 //! Single candidate:
 //! When a cell only contains one candidate.
 
-use crate::{cell::Cell, num::Num};
+use crate::structs::{cell::Cell, num::Num};
 
 impl Cell {
     /// Checks if a `Cell` is not known and only contains a single candidate.
