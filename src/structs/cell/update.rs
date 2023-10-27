@@ -3,6 +3,7 @@
 use super::Cell;
 use crate::structs::num::Num;
 
+/// [`Cell`] Modification
 impl Cell {
     /// Sets the known bit of the given cell.
     /// # Safety
@@ -18,6 +19,11 @@ impl Cell {
     /// The caller guarantees that this operation respects the `Cell` representation.
     pub unsafe fn set_candidates(&mut self, mask: CellMask) {
         self.0 |= mask.0
+    }
+
+    /// Removes the candidate bits set in the mask from the cell.
+    pub fn remove_candidates(&mut self, mask: CellMask) {
+        self.0 &= !mask.0
     }
 }
 
@@ -36,11 +42,5 @@ impl CellMask {
             x |= 1 << u16::from(num);
         }
         Self(x)
-    }
-}
-
-impl Cell {
-    pub fn remove_candidates(&mut self, mask: CellMask) {
-        self.0 &= !mask.0
     }
 }

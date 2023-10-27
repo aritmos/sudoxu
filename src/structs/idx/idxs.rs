@@ -26,7 +26,7 @@ pub type GridIdx = Idx<81>;
 impl GridIdx {
     /// Returns the `SectionIdx`s associated to the given `GridIdx`, returned in the order: Row,
     /// Column, Box.
-    /// # (Simple) Examples
+    /// # (Simplified) Examples
     /// ```txt
     /// 45 => [5, 0, 3]
     /// ```
@@ -40,7 +40,7 @@ impl GridIdx {
 
     /// Returns the `InnerIdx`s associated to the given `GridIdx`, returned in the order: Row,
     /// Column, Box.
-    /// # (Simple) Examples
+    /// # (Simplified) Examples
     /// ```txt
     /// 45 => [0, 5, 6]
     /// ```

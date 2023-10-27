@@ -1,6 +1,3 @@
-//! Unique Candidate:
-//! When within a `Section`, a given `Cell` contains the only candidate for a certain `Num`.
-
 use crate::structs::{
     cell::{CandidateError, Cell},
     grid::Grid,

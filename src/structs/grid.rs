@@ -16,8 +16,10 @@ use super::{
 pub struct Grid(pub(super) [Cell; 81]);
 
 #[derive(Debug)]
+/// Grid-related errors
 pub enum GridError {
-    FromStringError, // Error in parsing a `String` into a `Grid`
+    /// Error in parsing a [`String`] into a [`Grid`].
+    FromStringError,
 }
 
 // Manual implementation as we cannot derive Default with an inner array of size > 32.
@@ -28,12 +30,13 @@ impl Default for Grid {
 }
 
 impl Grid {
-    /// Get the Cell at index `idx`
+    /// Get a copy of the [`Cell`] the given index.
     #[inline(always)]
     pub fn get(&self, idx: GridIdx) -> Cell {
         self.0[idx]
     }
 
+    /// Get a mutable reference to the [`Cell`] at the given index.
     pub fn get_mut(&mut self, idx: GridIdx) -> &mut Cell {
         &mut self.0[idx]
     }

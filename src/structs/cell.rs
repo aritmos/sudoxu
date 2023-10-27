@@ -4,46 +4,78 @@ use std::num::NonZeroU16;
 mod fmt;
 mod update;
 
-/// A cell within the grid, holding information about its known value or possible candidates.
-/// Internally represented by a u16.
+/// A cell within the grid.
+/// Holds information about what candidates the cell has, and if the value of the cell is known.
 ///
-/// # u16 Representation
+/// [`Cell`] is a direct wrapper of a `u16`. In general, we think of [`Cell`]s and
+/// `u16`s as being the same thing. That being said, not all operations on `u16`s are valid
+/// or safe in the context of a [`Cell`]'s representation. For this reason [`Cell`]
+/// does not implement [`Deref<u16>`](std::ops::Deref), nor is its inner `u16` marked public.
+/// In many occasions it is still necessary to access the underyling `u16`. For this reason
+/// [`Cell`] contains an explicit [`to_u16`](Cell::to_u16) method for casting.
+///
+/// # `u16` Representation
 /// ```txt
-/// (000 000) 0 0 0  0 0 0  0 0 0  0
-///  ^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^
-///  (banned  candidates           known bit
-///  bits)    9 8 7  6 5 4  3 2 1
+/// 0b  000000  0 0 0  0 0 0  0 0 0  0
+///     ^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^
+///     |       |                    known bit
+///     |       candidates
+///     |      (9 8 7  6 5 4  3 2 1)
+///     banned bits
 /// ```
-/// ## Known Bit
-/// The first bit is the _known bit_.
-/// When it is set to 1 the cell is assumed to have a known Number (as opposed to multiple
-/// candidates). This means there must only be a single 1 within the following 9 bits.
-///
-/// ## Candidates
-/// The following 9 bits are the _candidate_ bits, these represent the possible candidate numbers
+/// #### Known Bit
+/// The first bit is the "known bit".
+/// When it is set, the cell is assumed to have a known number (the cell has been filled out), as opposed to multiple
+/// candidates (having pencilmarks). This means there must only be a single "candidate bit" set.
+/// ```
+/// // Valid u16 representation of a cell with value 9.
+/// let cell_inner = 0b000000_100_000_000_1
+/// // Invalid u16 representation. Known bit is set but candidate bits for 5 and 6 are set.
+/// // This would represent a cell with a known value that is both 5 and 6.
+/// let cell_inner = 0b000000_000_110_000_1
+/// // Invalid u16 representation. Known bit is set but there are no set candidate bits.
+/// // This would represent a cell with a known value, but no known value is set.
+/// let cell_inner = 0b000000_000_000_000_1
+/// ```
+/// #### Candidates
+/// The following 9 bits are the "candidate" bits, these represent the possible candidate numbers
 /// 1..=9 that can go in the cell.
 ///
-/// ## Banned Bits
+/// #### Banned Bits
 /// The final 6 bits are unused in the current implementation.
-/// They must always set to zero. If not then errors are created.
+/// If they are not all set to zero, then the `Cell`s representation is deemed invalid.
+///
+/// # Safety
+/// TODO
 ///
 /// # Nomenclature
 /// We refer to a cell holding a known number as having a _value_ of said number,
 /// while a cell not holding a known number as having _candidates_.
-/// - `Cell(0b000000_100_000_000_1)` has _value_ 9.
-/// - `Cell(0b000000_000_000_111_0)` has _candidates_ 1, 2, and 3.
-/// ```
+/// - `Cell(0b000000_100_000_000_1)` has "value" 9.
+/// - `Cell(0b000000_000_000_111_0)` has "candidates" 1, 2, and 3.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Cell(u16);
 
+/// Errors relating to a Cell's candidates.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum CandidateError {
+    /// Error when parsing a [Cell] from a [String].
     ParseError,
-    BannedBits,               // Cell >= 1024 (= 2^10)
-    KnownNoNum,               // Cell == 1
-    KnownMultipleNum,         // Cell % 2 == 1 && !(Cell - 1).is_power_of_two()
-    NoCandidates,             // Cell == 0
-    MultipleUniqueCandidates, // Multiple unique candidates within neighbors.
+    /// Bits set within the banned sector.
+    /// `Cell >= 1024 ( = 2^10 )`
+    BannedBits,
+    /// Known bit is set but no candidates are set.
+    /// `Cell == 1`
+    KnownNoNum,
+    /// Known bit is set but multiple candidates are also set.
+    /// `Cell % 2 == 1 && !(Cell - 1).is_power_of_two()`
+    KnownMultipleNum,
+    /// Cell contains no candidates.
+    /// `Cell == 0`
+    NoCandidates,
+    /// Cell has multiple unique candidates within its sections.
+    /// See [finders::unique_candidate](crate::finders::unique_candidate).
+    MultipleUniqueCandidates,
 }
 
 impl Default for Cell {
@@ -53,9 +85,10 @@ impl Default for Cell {
     }
 }
 
+/// Base Implementations
 impl Cell {
-    /// Checks if a given `Cell` has an allowed representation.
-    pub fn check(&self) -> Result<(), CandidateError> {
+    /// Checks if a given [`Cell`] has an allowed representation.
+    pub fn check(self) -> Result<(), CandidateError> {
         let self_u16 = self.to_u16();
         if self_u16 == 0 {
             return Err(CandidateError::NoCandidates);
@@ -74,8 +107,8 @@ impl Cell {
         }
     }
 
-    /// Creates a new Cell, which can either contain multiple candidates or be known.
-    /// Errors if provided with a single candidate but the _known bit_ is not set.
+    /// Creates a new [`Cell`] from an inner `u16`. Returns a [`CandidateError`] if the `u16`'s
+    /// does not follow the [allowed representation](Cell#u16-representation).
     pub fn new(n: u16) -> Result<Self, CandidateError> {
         let cell = unsafe { Self::new_unchecked(n) };
         cell.check().map(|_| cell)
@@ -90,30 +123,30 @@ impl Cell {
         Self(n)
     }
 
-    /// Creates a `Cell` with a known value from a `Num`.
+    /// Creates a [Cell] with a known value from a [Num].
     pub fn new_known(n: Num) -> Cell {
         let inner: u16 = (1 << u16::from(n)) | 1;
         // Safety is guaranteed by construction
         unsafe { Cell::new_unchecked(inner) }
     }
 
-    /// Equivalent functionality to dereferncing.
-    /// Used to better showcase intent within the code.
-    #[inline(always)]
+    /// Returns the inner `u16` within the [Cell].
+    // #[inline(always)]
     pub fn to_u16(self) -> u16 {
         self.0
     }
 
     /// Returns whether the known bit is set.
     #[inline(always)]
-    pub fn is_known(&self) -> bool {
+    pub fn is_known(self) -> bool {
         self.0 & 1 != 0
     }
 
-    /// Wrapper for `Cell::new_unchecked(0)`
+    /// Wrapper for [`Cell::new_unchecked(0)`](Cell::new_unchecked)
     /// # Safety
-    /// This is an INVALID `Cell` REPRESENTATION meant to be ONLY used within calculations/accumulations.
-    /// Caller guarantees that this form of a `Cell` is only used witihn such cases
+    /// **This method intentionally returns an invalid `Cell` representation** meant
+    /// to be **only** used within internal calculations or accumulations.
+    /// The caller guarantees that this form of a `Cell` is only used within such cases
     /// and is never returned or used as an actual `Cell`.
     #[inline(always)]
     pub unsafe fn zerod() -> Cell {

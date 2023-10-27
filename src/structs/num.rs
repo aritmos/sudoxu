@@ -3,9 +3,12 @@
 pub struct Num(u8);
 
 #[derive(Debug)]
+/// [`Num`]-related errors.
 pub enum NumErr {
-    Zero,   // n == 0
-    TooBig, // n > 9
+    /// `n == 0`
+    Zero,
+    /// `n > 9`
+    TooBig,
 }
 
 macro_rules! impl_from_num {
@@ -21,6 +24,8 @@ macro_rules! impl_from_num {
 impl_from_num!(u16);
 
 impl Num {
+    /// Creates a [`Num`] from a `u8`.
+    /// Returns an error if `n` is not in `1..=9`.
     pub fn new(n: u8) -> Result<Self, NumErr> {
         match n {
             0 => Err(NumErr::Zero),
@@ -29,8 +34,9 @@ impl Num {
         }
     }
 
+    /// Creates a [`Num`] from a `u8`. Does not apply the bounds check.
     /// # Safety
-    /// The caller must ensure that the `u8` passed in satisfies `1 <= n <= 9`.
+    /// The caller must ensure that `1 <= n <= 9`.
     pub unsafe fn new_unchecked(n: u8) -> Self {
         Self(n)
     }

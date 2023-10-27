@@ -1,8 +1,6 @@
-//! Single candidate:
-//! When a cell only contains one candidate.
-
 use crate::structs::{cell::Cell, num::Num};
 
+/// [`Finder`](crate::finders)
 impl Cell {
     /// Checks if a `Cell` is not known and only contains a single candidate.
     /// # Safety:

@@ -4,37 +4,49 @@ use super::{
 };
 
 #[derive(Debug)]
+/// A row, column, or box of [`Cell`]s.
 pub struct Section {
+    /// The information linking to what [`Section`] within the [`Grid`](crate::structs::grid::Grid)
+    /// this section was taken from.
     pub info: SectionInfo,
+    /// The underlying array of [`Cell`]s.
     pub cells: [Cell; 9],
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 /// Information to identify a Section within the grid.
 pub struct SectionInfo {
+    /// What kind of [`Section`] is it.
     pub kind: SectionKind,
+    /// What (section) index is it.
     pub idx: SectionIdx,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+/// An enum for representing the kinds of [`Section`]s.
 pub enum SectionKind {
+    /// Row: Horizontal line within the grid.
     Row = 0,
+    /// Column: Vertical line within the grid.
     Column = 1,
+    /// Box: 3x3 square within the grid.
     Box = 2,
 }
 
 impl Section {
-    pub fn new(info: SectionInfo, cells: [Cell; 9]) -> Self {
+    /// Create a new [`Section`].
+    pub(super) fn new(info: SectionInfo, cells: [Cell; 9]) -> Self {
         Self { info, cells }
     }
 }
 
 impl SectionInfo {
+    /// Create a new [`SectionInfo`].
     pub fn new(kind: SectionKind, idx: SectionIdx) -> Self {
         Self { kind, idx }
     }
 
-    /// Returns the grid indexes of the provided section
+    /// Return the grid indexes of the provided section.
     pub fn grid_idxs(self) -> [GridIdx; 9] {
         const SECTION_GRIDIDXS: [[usize; 9]; 27] = [
             // Rows
