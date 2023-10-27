@@ -1,5 +1,5 @@
 /// A known number within a `Cell`, satisfying `1 <= N <= 9`.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Num(u8);
 
 #[derive(Debug)]
