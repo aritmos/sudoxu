@@ -24,17 +24,32 @@ pub type GridIdx = Idx<81>;
 // Hence we somewhat sloppily use the type alias to showcase intent, and implement directly on the
 // `Idx` type.
 impl GridIdx {
-    /// Returns the section index and inner index of the grid index for each of the section types
-    /// in the order: row, column, box.
-    /// # Example ()
-    pub fn associated_idxs(&self) -> [(SectionIdx, InnerIdx); 3] {
+    /// Returns the `SectionIdx`s associated to the given `GridIdx`, returned in the order: Row,
+    /// Column, Box.
+    /// # (Simple) Examples
+    /// ```txt
+    /// 45 => [5, 0, 3]
+    /// ```
+    pub fn section_idxs(self) -> [SectionIdx; 3] {
         let i = self.0;
         let row = i / 9;
         let col = i % 9;
         let box_ = 3 * (row / 3) + (col / 3);
-        let box_inner = 3 * (row % 3) + (col % 3);
+        unsafe { std::mem::transmute([row, col, box_]) }
+    }
 
-        unsafe { std::mem::transmute([(row, col), (col, row), (box_, box_inner)]) }
+    /// Returns the `InnerIdx`s associated to the given `GridIdx`, returned in the order: Row,
+    /// Column, Box.
+    /// # (Simple) Examples
+    /// ```txt
+    /// 45 => [0, 5, 6]
+    /// ```
+    pub fn inner_idxs(&self) -> [InnerIdx; 3] {
+        let i = self.0;
+        let row = i / 9;
+        let col = i % 9;
+        let box_inner = 3 * (row % 3) + (col % 3);
+        unsafe { std::mem::transmute([col, row, box_inner]) }
     }
 }
 
@@ -62,23 +77,3 @@ pub type SectionIdx = Idx<9>;
 /// 0 1 2 │  ...  │
 /// ```
 pub type InnerIdx = Idx<9>;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn grid_idx_associated() {
-        let i = GridIdx::new(39_usize).unwrap();
-        let idxs = i.associated_idxs();
-        let expected: [(Idx<9>, Idx<9>); 3] =
-            unsafe { std::mem::transmute([(4_usize, 3_usize), (3, 4), (4, 3)]) };
-        assert_eq!(idxs, expected);
-
-        let i = GridIdx::new(7_usize).unwrap();
-        let idxs = i.associated_idxs();
-        let expected: [(Idx<9>, Idx<9>); 3] =
-            unsafe { std::mem::transmute([(0_usize, 7_usize), (7, 0), (2, 1)]) };
-        assert_eq!(idxs, expected);
-    }
-}

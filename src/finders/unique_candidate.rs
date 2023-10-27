@@ -47,14 +47,12 @@ impl Grid {
     /// `sections`' `[bool; 3]` represents selecting the `Cell`'s row, column and box
     /// respectively to be tested against for unique candidates.
     pub fn unique_candidate(&self, grid_idx: GridIdx) -> Result<Option<Num>, CandidateError> {
-        let idx_info = grid_idx.associated_idxs();
+        let sections = self.sections(grid_idx);
+        let inner_idxs = grid_idx.inner_idxs();
 
         let mut result = Ok(None);
 
-        for (section_kind, (section_idx, inner_idx)) in [Row, Column, Box].into_iter().zip(idx_info)
-        {
-            let section_info = SectionInfo::new(section_kind, section_idx);
-            let section = self.section(section_info);
+        for (section, inner_idx) in sections.into_iter().zip(inner_idxs) {
             let section_result = section.unique_candidate(inner_idx);
             match (result, section_result) {
                 (_, Ok(None)) => (),
