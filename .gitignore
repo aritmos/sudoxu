@@ -1,3 +1,7 @@
-/target
+# Bacon stuff.
 .bacon-locations
 bacon.toml
+
+# Only track the documentation within the `target` directory.
+/target/*
+!/target/doc/

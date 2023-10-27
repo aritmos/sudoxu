@@ -17,7 +17,7 @@ The `sudoxu` codebase (will eventually) consist of three main modules:
 2. Solvers:
     - Structures that implement the `Solver` trait. These manage all of the available methods to solve the sudoku. They are the "brains" that set the solving strategy.
 3. UI:
-    - A TUI interface, most likely using [ratatui](https://github.com/ratatui-org/ratatui).
+    - A TUI interface.
     - Ability to select different solvers, including step by step solutions.
     - Metrics and other pretty outputs.
 
@@ -26,6 +26,8 @@ The `sudoxu` codebase (will eventually) consist of three main modules:
 - This project is still in early works. It will exist as a library until all major implementations have been completed. After that it wil be turned into a binary with a terminal interface. The project will be hosted in [crates.io](https://crates.io/) when it is closer to `v1.0`. For now the project can be explored via its documentation:
     - For now accessible on my [github.io page](https://aritmos.github.io)
     - Always available by cloning the repo and running: `cargo doc --open`.
+
+---
 
 - Currently the project is being rewritten in the [rewrite branch](https://github.com/aritmos/sudoxu/tree/rewrite), as I polish the original code that I wrote for the project over the summer.
 

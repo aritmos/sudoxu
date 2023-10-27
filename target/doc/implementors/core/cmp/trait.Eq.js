@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"sudoxu":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html\" title=\"trait core::cmp::Eq\">Eq</a> for <a class=\"struct\" href=\"sudoxu/structs/num/struct.Num.html\" title=\"struct sudoxu::structs::num::Num\">Num</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html\" title=\"trait core::cmp::Eq\">Eq</a> for <a class=\"struct\" href=\"sudoxu/structs/cell/struct.Cell.html\" title=\"struct sudoxu::structs::cell::Cell\">Cell</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
