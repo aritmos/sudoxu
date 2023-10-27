@@ -1,6 +1,8 @@
 use super::num::Num;
+use std::num::NonZeroU16;
 
 mod fmt;
+mod update;
 
 /// A cell within the grid, holding information about its known value or possible candidates.
 /// Internally represented by a u16.
@@ -83,6 +85,7 @@ impl Cell {
     /// Does no checking to verify the representation of the `u16` matches that of a `Cell`
     /// # Safety
     /// The caller must ensure that the content of the `u16` is a valid representation of a `Cell`.
+    #[inline(always)]
     pub unsafe fn new_unchecked(n: u16) -> Self {
         Self(n)
     }
@@ -96,13 +99,13 @@ impl Cell {
 
     /// Equivalent functionality to dereferncing.
     /// Used to better showcase intent within the code.
-    #[inline]
+    #[inline(always)]
     pub fn to_u16(self) -> u16 {
         self.0
     }
 
     /// Returns whether the known bit is set.
-    #[inline]
+    #[inline(always)]
     pub fn is_known(&self) -> bool {
         self.0 & 1 != 0
     }
@@ -112,6 +115,7 @@ impl Cell {
     /// This is an INVALID `Cell` REPRESENTATION meant to be ONLY used within calculations/accumulations.
     /// Caller guarantees that this form of a `Cell` is only used witihn such cases
     /// and is never returned or used as an actual `Cell`.
+    #[inline(always)]
     pub unsafe fn zerod() -> Cell {
         Cell::new_unchecked(0_u16)
     }
