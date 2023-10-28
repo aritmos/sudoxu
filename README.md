@@ -24,7 +24,7 @@ The `sudoxu` codebase (will eventually) consist of three main modules:
 ## 🚧 Project Status
 
 - This project is still in early works. It will exist as a library until all major implementations have been completed. After that it wil be turned into a binary with a terminal interface. The project will be hosted in [crates.io](https://crates.io/) when it is closer to `v1.0`. For now the project can be explored via its documentation:
-    - For now accessible on my [github.io page](https://aritmos.github.io)
+    - Accessible (for now) on my [github page](https://aritmos.github.io/sudoxu-docs)
     - Always available by cloning the repo and running: `cargo doc --open`.
 
 - Currently the project is being rewritten in the [rewrite branch](https://github.com/aritmos/sudoxu/tree/rewrite), as I polish the original code that I wrote for the project over the summer.
