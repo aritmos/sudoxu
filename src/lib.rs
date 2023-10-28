@@ -3,15 +3,8 @@
 #![allow(clippy::unusual_byte_groupings)]
 
 //! # Sudoxu
-//! Sudoxu is a library
+//! Sudoxu is a library (for now) that contains sudoku solving functionalities.
 
-pub mod structs;
-#[doc(inline)]
-use structs::*;
-
-pub mod finders;
-
+pub mod board;
+pub mod solver;
 pub mod solvers;
-
-mod tests;
-// mod utils;

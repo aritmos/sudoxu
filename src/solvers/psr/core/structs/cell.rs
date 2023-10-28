@@ -1,5 +1,4 @@
 use super::num::Num;
-use std::num::NonZeroU16;
 
 mod fmt;
 mod update;

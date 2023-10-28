@@ -1,7 +1,6 @@
 //! Updating Cells
 
-use super::Cell;
-use crate::structs::num::Num;
+use super::super::{cell::Cell, num::Num};
 
 /// [`Cell`] Modification
 impl Cell {

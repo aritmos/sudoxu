@@ -1,4 +1,5 @@
-use crate::structs::{cell::Cell, num::Num};
+use super::super::structs;
+use structs::{cell::Cell, num::Num};
 
 /// [`Finder`](crate::finders)
 impl Cell {

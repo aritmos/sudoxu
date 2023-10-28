@@ -1,14 +1,7 @@
-//! Sudoku solver functionality.
+//! Sudoku solvers, categorized by underlying data structure and function use.
 
-mod simple;
+pub mod btr;
 
-use crate::structs::grid::Grid;
+pub mod psr;
 
-/// A sudoku solver.
-pub trait Solver {
-    /// Initialisation taking in a [`Grid`].
-    fn init(grid: Grid) -> Self;
-
-    /// Solve the grid. The returned [`Grid`] is expected to be solved.
-    fn solve(self) -> Grid;
-}
+pub mod utils;

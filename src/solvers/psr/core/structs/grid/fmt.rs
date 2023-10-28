@@ -1,5 +1,8 @@
-use super::super::{cell::Cell, num::Num};
-use super::{Grid, GridError};
+use super::super::{
+    cell::Cell,
+    grid::{Grid, GridError},
+    num::Num,
+};
 
 use std::fmt::Display;
 

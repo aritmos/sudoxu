@@ -1,4 +1,5 @@
-use crate::structs::{
+use super::super::structs;
+use structs::{
     cell::{CandidateError, Cell},
     grid::Grid,
     idx::{GridIdx, InnerIdx},
