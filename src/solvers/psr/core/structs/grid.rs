@@ -3,10 +3,11 @@ mod update;
 
 use super::{
     cell::Cell,
-    idx::{GridIdx, SectionIdx},
+    idx::GridIdx,
     section::{Section, SectionInfo, SectionKind},
 };
 
+#[derive(PartialEq, Eq)]
 /// The sudoku Grid.
 ///
 /// # Representation Correctness

@@ -1,87 +1,38 @@
-use super::super::{
-    cell::Cell,
-    grid::{Grid, GridError},
-    num::Num,
-};
+use super::super::{cell::Cell, grid::Grid, num::Num};
 
-use std::fmt::Display;
-
-impl TryFrom<String> for Grid {
-    type Error = GridError;
-
-    /// Attempts to convert a `String` into a Grid.
-    /// Ignores any non ascii digit characters.
-    /// Fails if the number of numerical characters is not 81.
-    fn try_from(s: String) -> Result<Self, Self::Error> {
-        let mut grid = Grid::default();
-        let nums = s
-            .chars()
-            .filter_map(|c| c.to_digit(10))
-            .collect::<Vec<u32>>();
-        if nums.len() != 81 {
-            return Err(GridError::FromStringError);
+impl std::fmt::Debug for Grid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let rows = unsafe { std::mem::transmute::<_, [[Cell; 9]; 9]>(self.0) };
+        for r in rows {
+            writeln!(
+                f,
+                "{:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}",
+                r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]
+            )?;
         }
-
-        for (cell, num) in grid.0.iter_mut().zip(nums) {
-            if num == 0 {
-                continue;
-            } else {
-                *cell = Cell::new_known(unsafe { Num::new_unchecked(num as u8) });
-            }
-        }
-
-        Ok(grid)
+        Ok(())
     }
 }
 
-impl Display for Grid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let r = unsafe {
-            std::mem::transmute::<_, [[char; 9]; 9]>(self.0.map(char::from)).map(|r| {
-                format!(
-                    "│ {} {} {} │ {} {} {} │ {} {} {} │",
-                    r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]
-                )
-            })
-        };
-        write!(
-            f,
-            "\
-            ┌───────────────────────┐\n\
-            {}\n\
-            {}\n\
-            {}\n\
-            │ ──────┼───────┼────── │\n\
-            {}\n\
-            {}\n\
-            {}\n\
-            │ ──────┼───────┼────── │\n\
-            {}\n\
-            {}\n\
-            {}\n\
-            └───────────────────────┘\n\
-            ",
-            r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]
-        )
+use crate::board::Board;
+
+impl From<Board> for Grid {
+    fn from(board: Board) -> Self {
+        Self(board.0.map(|b| match b - b'0' {
+            0 => Cell::default(),
+            n => Cell::new_known(unsafe { Num::new_unchecked(n) }),
+        }))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::{SUDOKU_1_UNSOLVED_FMT_STR, SUDOKU_1_UNSOLVED_STR};
 
     #[test]
-    fn grid_from_str() {
-        let s = SUDOKU_1_UNSOLVED_STR.to_string();
-        assert!(Grid::try_from(s).is_ok());
-    }
-
-    #[test]
-    fn grid_to_str() {
-        let grid = Grid::try_from(SUDOKU_1_UNSOLVED_STR.to_string()).unwrap();
-        let grid_string = grid.to_string();
-        let expected = SUDOKU_1_UNSOLVED_FMT_STR.to_string();
-        assert_eq!(grid_string, expected)
+    fn empty_board() {
+        let s = std::string::String::from_utf8(vec![b'0'; 81]).unwrap();
+        let b = Board::try_from(s).unwrap();
+        assert_eq!(Grid::from(b), Grid::default());
     }
 }
