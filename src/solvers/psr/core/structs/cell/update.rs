@@ -8,7 +8,7 @@ impl Cell {
     /// # Safety
     /// Caller guarantees that the cell only has a single candidate,
     /// such that setting the known bit results in a valid representation.
-    pub unsafe fn set_known(&mut self) {
+    pub unsafe fn set_known_bit(&mut self) {
         self.0 |= 1;
     }
 
