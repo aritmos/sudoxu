@@ -1,3 +1,7 @@
+mod simd;
+#[doc(inline)]
+pub use simd::*;
+
 use super::{
     cell::Cell,
     idx::{GridIdx, InnerIdx, SectionIdx},
