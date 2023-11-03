@@ -22,8 +22,8 @@ impl Section {
         let candidate_cell = cells[inner_idx];
 
         // OR all of the remaining candidates together
-        cells[inner_idx] = unsafe { Cell::zerod() };
-        let combined_candidates = cells.iter().fold(unsafe { Cell::zerod() }, |a, b| unsafe {
+        cells[inner_idx] = unsafe { Cell::zeroed() };
+        let combined_candidates = cells.iter().fold(unsafe { Cell::zeroed() }, |a, b| unsafe {
             Cell::new_unchecked(a.to_u16() | b.to_u16())
         });
 

@@ -190,7 +190,7 @@ impl Cell {
     /// The caller guarantees that this form of a `Cell` is only used within such cases
     /// and is never returned or used as an actual `Cell`.
     #[inline(always)]
-    pub unsafe fn zerod() -> Cell {
+    pub unsafe fn zeroed() -> Cell {
         Cell::new_unchecked(0_u16)
     }
 }
