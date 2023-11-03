@@ -7,7 +7,7 @@ pub mod grid;
 /// Safe indexing into comptime known arrays.
 pub mod idx;
 
-/// Representation of a known number within a [Cell](cell::Cell): `1 <= N <= 9`.
+/// Representation of a known number within a [`Cell`](cell::Cell): `1 <= N <= 9`.
 pub mod num;
 
 /// A row, column, or box within the grid.

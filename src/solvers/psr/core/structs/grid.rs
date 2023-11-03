@@ -11,12 +11,18 @@ use super::{
 };
 
 #[derive(PartialEq, Eq)]
-/// The sudoku Grid.
+/// The sudoku board for PSR solvers.
 ///
-/// # Representation Correctness
-/// It is okay for `Cell`s within the Grid to contain candidates that are not allowed due to
-/// neighboring known cells. This just means that some Cell's might have not been updated upon
-/// finding a value for a cell.
+/// #### Nomenclature
+/// A [`Cell`](Cell)'s "neighbours" are all other [`Cells`](Cell) in the grid that share a [`Section`]
+/// with the given [`Cell`].
+///
+/// #### Grid Correctness
+/// At any given time in a PSR Solver's computation, [`Cells`](Cell) within the Grid may contain
+/// candidates that are "not allowed" due to neighboring known cells. This is a valid representation.
+/// In these cases said [`Cells`](Cell) might have not been "updated" upon finding a value for a cell.
+/// Care must be taken to promptly update [`Cells`](Cell) every time candidates are filtered or
+/// values are found.
 pub struct Grid(pub(super) [Cell; 81]);
 
 #[derive(Debug)]
@@ -48,7 +54,7 @@ impl Grid {
 
 // Section Related
 impl Grid {
-    /// Returns (a copy of) the specified `Section`.
+    /// Returns (a copy of) the specified [`Section`].
     pub fn section(&self, section_info: SectionInfo) -> Section {
         use std::mem::MaybeUninit;
         let grid_idxs = section_info.grid_idxs();

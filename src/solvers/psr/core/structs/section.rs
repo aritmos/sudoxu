@@ -4,12 +4,12 @@ use super::{
 };
 
 #[derive(Debug)]
-/// A row, column, or box of [`Cell`]s.
+/// A row, column, or box of [`Cells`](Cell).
 pub struct Section {
-    /// The information linking to what [`Section`] within the [`Grid`](super::super::structs::grid::Grid)
-    /// this section was taken from.
+    /// The information linking to what [`Section`] within the
+    /// [`Grid`](super::super::structs::grid::Grid) this section was taken from.
     pub info: SectionInfo,
-    /// The underlying array of [`Cell`]s.
+    /// The underlying array of [`Cells`](Cell).
     pub cells: [Cell; 9],
 }
 
@@ -23,7 +23,7 @@ pub struct SectionInfo {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-/// An enum for representing the kinds of [`Section`]s.
+/// An enum for representing the kinds of [`Sections`](Section).
 pub enum SectionKind {
     /// Row: Horizontal line within the grid.
     Row = 0,

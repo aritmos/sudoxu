@@ -80,6 +80,9 @@ pub use update::*;
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Cell(u16);
 
+/// Inner value of a [`Cell`](Cell) representing all candidates being possible.
+pub const ALL_CANDIDATES: u16 = 0b000000_111_111_111_0;
+
 /// Errors relating to a Cell's candidates.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum CandidateError {
@@ -99,14 +102,14 @@ pub enum CandidateError {
     /// Known bit is set but multiple candidates are also set.
     /// ```
     /// let cell = unsafe{ Cell::new_unchecked(0b000000_111_000_000_1) };
-    /// assert!(cell.to_u16() % 2 == 1 && !(cell.to_u16() & 0b000000_111_111_111_0 - 1).is_power_of_two());
+    /// assert!(cell.to_u16() % 2 == 1 && !(cell.to_u16() & CELL_DEFAULT_U16 - 1).is_power_of_two());
     /// ```
     KnownMultipleNum,
     /// Cell contains no candidates/value.
     ///
     /// ```
     /// let cell = unsafe{ Cell::new_unchecked(0b000000_000_000_000_0) };
-    /// assert!(cell.to_u16() & 0b000000_111_111_111_0 == 0);
+    /// assert!(cell.to_u16() & CELL_DEFAULT_U16 == 0);
     /// ```
     NoCandidates,
     /// Cell has multiple unique candidates within its [Sections](super::section::Section).
@@ -120,8 +123,7 @@ pub enum CandidateError {
 
 impl Default for Cell {
     fn default() -> Self {
-        Self(0b000000_111_111_111_0)
-        //            987 654 321
+        Self(ALL_CANDIDATES)
     }
 }
 
