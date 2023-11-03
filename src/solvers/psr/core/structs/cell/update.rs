@@ -28,9 +28,21 @@ impl Cell {
 
 /// Used to remove multiple candidates from a `Cell`.
 /// Will always be applied as a negative mask onto the candidate bits.
+#[derive(Clone, Copy)]
 pub struct CellMask(u16);
 
 impl CellMask {
+    /// Returns the inner `u16`.
+    pub fn to_u16(self) -> u16 {
+        self.0
+    }
+
+    /// Creates a `CellMask` from a `u16`. Returns `None` if bits outside of "candidate bits" are
+    /// set. See [Cell's representation](super::Cell#internal-representation) for more information.
+    pub fn new(x: u16) -> Option<Self> {
+        (x & 0b111111_000_000_000_1 == 0).then_some(Self(x))
+    }
+
     pub fn from_known(num: Num) -> Self {
         Self(1 << u16::from(num))
     }
