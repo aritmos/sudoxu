@@ -1,5 +1,8 @@
 mod fmt;
+#[doc(hidden)]
 mod update;
+#[doc(inline)]
+pub use update::*;
 
 use super::{
     cell::Cell,

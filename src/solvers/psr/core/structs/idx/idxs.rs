@@ -66,7 +66,8 @@ impl GridIdx {
 /// ```
 pub type SectionIdx = Idx<9>;
 
-/// An index into a `Section`'s Cells.
+/// An index into a [`Section`](super::super::section::Section)'s inner
+/// [Cells](super::super::cell::Cell).
 /// For rows(columns) these are their cell's column(row) `SectionIdx`.
 /// For boxes these are:
 /// ```txt

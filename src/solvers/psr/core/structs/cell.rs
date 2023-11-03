@@ -2,6 +2,8 @@ use super::num::Num;
 
 mod fmt;
 mod update;
+#[doc(inline)]
+pub use update::*;
 
 /// A cell within the grid.
 /// Holds information about what candidates the cell has, and if the value of the cell is known.

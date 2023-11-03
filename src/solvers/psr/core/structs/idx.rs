@@ -6,7 +6,7 @@ mod fmt;
 
 use std::ops::{Index, IndexMut};
 
-/// A generic indexing type used to safely access comptime known-length slices.
+/// A generic indexing type used to safely access comptime known-length slices and sets.
 ///
 /// Backed by a `usize` `x` guaranteed to satisfy `x < N`.
 #[derive(Clone, Copy, PartialEq)]

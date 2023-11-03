@@ -5,7 +5,7 @@ impl Cell {
     /// Checks if a [`Cell`] is not known and only contains a single candidate.
     ///
     /// # Finder Method
-    /// See the [module level documentation](super) for more information.
+    /// See the [core module's documentation](super::super#finders) for more information.
     ///
     /// # Safety
     /// Does not check that the underyling `u16` representation is correct.

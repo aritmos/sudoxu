@@ -12,7 +12,7 @@ impl Section {
     /// other cells within the `Section`.
     ///
     /// # Finder Method
-    /// See the [module level documentation](super) for more information.
+    /// See the [core module's documentation](super::super#finders) for more information.
     ///
     /// # Safety
     /// Does not check that the inner `Cell`s have correct representation.
@@ -44,10 +44,11 @@ impl Section {
 }
 
 impl Grid {
-    /// Checks if a `Cell` contains a unique candidate within its three `Section`s.
+    /// Checks if a [`Cell`] contains a unique candidate within its three [`Section`]s.
     ///
-    /// `sections`' `[bool; 3]` represents selecting the `Cell`'s row, column and box
-    /// respectively to be tested against for unique candidates.
+    /// # Finder Method
+    /// The function is a wrapper for a finder method.
+    /// See the [core module's documentation](super::super#finders) for more information.
     pub fn unique_candidate(&self, grid_idx: GridIdx) -> Result<Option<Num>, CandidateError> {
         let sections = self.sections(grid_idx);
         let inner_idxs = grid_idx.inner_idxs();
