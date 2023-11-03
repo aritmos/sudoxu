@@ -1,5 +1,8 @@
 use super::super::structs;
-use structs::{cell::Cell, num::Num};
+use structs::{
+    cell::{Cell, ALL_CANDIDATES},
+    num::Num,
+};
 
 impl Cell {
     /// Checks if a [`Cell`] is not known and only contains a single candidate.
@@ -15,7 +18,7 @@ impl Cell {
     /// and [`CandidateError::BannedBits`](super::super::structs::cell::CandidateError::BannedBits).
     pub fn single_candidate(self) -> Option<Num> {
         let is_single_candidate =
-            !self.is_known() && (self.to_u16() & 0b000000_111_111_111_0).count_ones() == 1;
+            !self.is_known() && (self.to_u16() & ALL_CANDIDATES).count_ones() == 1;
         is_single_candidate.then_some(unsafe { Num::new_unchecked(self.to_u16().ilog2() as u8) })
     }
 }
