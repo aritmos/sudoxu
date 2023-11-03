@@ -1,10 +1,13 @@
 use super::super::structs;
 use structs::{cell::Cell, num::Num};
 
-/// [`Finder`](crate::finders)
 impl Cell {
-    /// Checks if a `Cell` is not known and only contains a single candidate.
-    /// # Safety:
+    /// Checks if a [`Cell`] is not known and only contains a single candidate.
+    ///
+    /// # Finder Method
+    /// See the [module level documentation](super) for more information.
+    ///
+    /// # Safety
     /// Does not check that the underyling `u16` representation is correct.
     /// Any invalid `Cell` representation will return `false`.
     pub fn single_candidate(self) -> Option<Num> {

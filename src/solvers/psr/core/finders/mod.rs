@@ -1,8 +1,5 @@
-//! (methods here are taken to their underlying type)
-//! manual linking is required.
-
-#[doc(hidden)]
+/// Single candidate detection.
 pub mod single_candidate;
 
-#[doc(hidden)]
+/// Unique candidate detection.
 pub mod unique_candidate;

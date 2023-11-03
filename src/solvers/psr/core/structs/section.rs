@@ -6,7 +6,7 @@ use super::{
 #[derive(Debug)]
 /// A row, column, or box of [`Cell`]s.
 pub struct Section {
-    /// The information linking to what [`Section`] within the [`Grid`](crate::structs::grid::Grid)
+    /// The information linking to what [`Section`] within the [`Grid`](super::super::structs::grid::Grid)
     /// this section was taken from.
     pub info: SectionInfo,
     /// The underlying array of [`Cell`]s.

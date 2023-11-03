@@ -1,16 +1,19 @@
 pub mod idxs;
+
+#[doc(inline)]
 pub use idxs::*;
 mod fmt;
 
 use std::ops::{Index, IndexMut};
 
-/// A number `x` guaranteed to satisfy `x < N`.
-/// Used for indexing into arrays without fearing for out-of-bounds indexing.
+/// A generic indexing type used to safely access comptime known-length slices.
+///
+/// Backed by a `usize` `x` guaranteed to satisfy `x < N`.
 #[derive(Clone, Copy, PartialEq)]
 pub struct Idx<const N: usize>(usize);
 
 impl<const N: usize> Idx<N> {
-    /// Tries to create an `Idx<N>` from a _uint_.
+    /// Tries to create an `Idx<N>` from a `uint`.
     /// Returns None if the number is too large.
     pub fn new<T: Into<usize>>(t: T) -> Option<Self> {
         let n = t.into();
@@ -31,29 +34,27 @@ impl<const N: usize> Idx<N> {
     }
 }
 
-// Idx -> usize
-// For index value computation
 impl<const N: usize> From<Idx<N>> for usize {
+    /// [`Idx`] -> usize
+    /// Used for index value computations.
     fn from(value: Idx<N>) -> Self {
         value.0
     }
 }
 
-/// Safe "uint" -> Idx
+// `x.to_idx()` ergonomics for casting `uint -> Idx`.
+
+/// Safe <code>uint -> [Idx]</code> conversion.
 pub trait TryIntoIdx: Into<usize> {
     /// Tries to cast a uint into an `Idx<N>`. Returns `None` if `self` was too large for `Idx<N>`
     /// (`n >= N`).
     fn try_to_idx<const N: usize>(self) -> Option<Idx<N>> {
         let n = self.into();
-        if n < N {
-            Some(Idx::<N>(n))
-        } else {
-            None
-        }
+        (n < N).then_some(Idx::<N>(n))
     }
 }
 
-/// uint -> Idx
+/// Unsafe <code>uint -> [Idx]</code> conversion.
 pub trait IntoIdx: Into<usize> {
     /// Casts a uint into an `Idx<N>`, without performing the bounds check.
     /// # Safety

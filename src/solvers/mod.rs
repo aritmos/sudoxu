@@ -1,4 +1,4 @@
-//! Sudoku solvers, categorized by underlying data structure and function use.
+//! Sudoku solver categories and utilities.
 
 pub mod btr;
 

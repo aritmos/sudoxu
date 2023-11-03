@@ -1,4 +1,5 @@
 #![allow(unused)]
+/// Board 01 unsolved as input `&str`.
 pub const SUDOKU_1_UNSOLVED_STR: &str = "
     0 0 6 0 4 0 0 9 7\
     0 4 0 7 3 0 0 1 0\
@@ -11,6 +12,7 @@ pub const SUDOKU_1_UNSOLVED_STR: &str = "
     8 6 0 0 2 0 3 0 0\
     ";
 
+/// Board 01 unsolved as `board.to_string()`.
 pub const SUDOKU_1_UNSOLVED_FMT_STR: &str = "\
     ┌───────────────────────┐\n\
     │     6 │   4   │   9 7 │\n\

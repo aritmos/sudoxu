@@ -10,7 +10,11 @@ use structs::{
 impl Section {
     /// Finds if the `Cell` at `inner_idx` contains a candidate found in no
     /// other cells within the `Section`.
-    /// # Safety:
+    ///
+    /// # Finder Method
+    /// See the [module level documentation](super) for more information.
+    ///
+    /// # Safety
     /// Does not check that the inner `Cell`s have correct representation.
     /// Incorrect `Cell` representations will lead to undefined behaviour.
     pub fn unique_candidate(&self, inner_idx: InnerIdx) -> Result<Option<Num>, CandidateError> {

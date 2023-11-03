@@ -1,4 +1,4 @@
-//! Concrete `Idx`s for use within Sudoku solving.
+//! Concrete [`Idx`]s.
 use super::Idx;
 
 use super::super::section::{SectionInfo, SectionKind::*};

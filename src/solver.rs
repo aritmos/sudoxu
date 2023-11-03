@@ -4,9 +4,9 @@ use crate::board::Board;
 
 /// A sudoku solver.
 pub trait Solver: Sized {
-    /// Initialize self
+    /// Initialize `self` from a [Board].
     fn init(grid_string: Board) -> Self;
 
-    /// Solve the sudoku and return the solved board.
+    /// Compute the solution and return the solved board.
     fn solve(self) -> Board;
 }
