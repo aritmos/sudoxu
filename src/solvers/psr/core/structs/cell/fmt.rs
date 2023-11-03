@@ -59,13 +59,13 @@ mod tests {
 
     #[test]
     fn to_char() {
-        let cell = Cell::new(0b0001000000001).unwrap();
+        let cell = Cell::new(0b000000_100_000_000_1).unwrap();
         assert_eq!(char::from(cell), '9');
     }
 
     #[test]
     fn byte_conversion() {
-        let c = Cell::new(0b0000001000000001).unwrap();
+        let c = Cell::new(0b000000_100_000_000_1).unwrap();
         let b = u8::from(c);
         assert_eq!(b, b'9');
     }
