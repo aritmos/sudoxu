@@ -9,9 +9,13 @@ impl Cell {
     ///
     /// # Safety
     /// Does not check that the underyling `u16` representation is correct.
-    /// Any invalid `Cell` representation will return `false`.
+    ///
+    /// Returns `false` in the cases of
+    /// [`CandidateError::KnownNoNum`](super::super::structs::cell::CandidateError::KnownNoNum)
+    /// and [`CandidateError::BannedBits`](super::super::structs::cell::CandidateError::BannedBits).
     pub fn single_candidate(self) -> Option<Num> {
-        let is_single_candidate = !self.is_known() && self.to_u16().count_ones() == 1;
+        let is_single_candidate =
+            !self.is_known() && (self.to_u16() & 0b000000_111_111_111_0).count_ones() == 1;
         is_single_candidate.then_some(unsafe { Num::new_unchecked(self.to_u16().ilog2() as u8) })
     }
 }
