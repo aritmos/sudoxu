@@ -40,12 +40,21 @@ impl CellMask {
         self.0
     }
 
-    /// Creates a `CellMask` from a `u16`. Returns `None` if bits outside of "candidate bits" are
+    /// Creates a [`CellMask`] from a `u16`. Returns `None` if bits outside of "candidate bits" are
     /// set. See [Cell's representation](super::Cell#internal-representation) for more information.
     pub fn new(x: u16) -> Option<Self> {
         (x & !ALL_CANDIDATES == 0).then_some(Self(x))
     }
 
+    /// Creates a [`CellMask`] with an inner `u16` equal to that of a known [`Cell`] with value
+    /// `num` but without the known bit.
+    ///
+    /// # Example
+    /// ```
+    /// let num = Num::new(3).unwrap();
+    /// let cellmask = CellMask::new(num);
+    /// assert_eq(cellmask.to_u16(), 0b000_000_100_0);
+    /// ```
     pub fn from_known(num: Num) -> Self {
         Self(1 << u16::from(num))
     }
@@ -56,5 +65,9 @@ impl CellMask {
             x |= 1 << u16::from(num);
         }
         Self(x)
+    }
+
+    pub fn from_cell(cell: Cell) -> Self {
+        Self(cell.0)
     }
 }
