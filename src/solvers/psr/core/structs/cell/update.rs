@@ -1,6 +1,9 @@
 //! Updating Cells
 
-use super::super::{cell::Cell, num::Num};
+use super::{
+    super::{cell::Cell, num::Num},
+    ALL_CANDIDATES,
+};
 
 /// [`Cell`] Modification
 impl Cell {
@@ -40,7 +43,7 @@ impl CellMask {
     /// Creates a `CellMask` from a `u16`. Returns `None` if bits outside of "candidate bits" are
     /// set. See [Cell's representation](super::Cell#internal-representation) for more information.
     pub fn new(x: u16) -> Option<Self> {
-        (x & 0b111111_000_000_000_1 == 0).then_some(Self(x))
+        (x & !ALL_CANDIDATES == 0).then_some(Self(x))
     }
 
     pub fn from_known(num: Num) -> Self {

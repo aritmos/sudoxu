@@ -30,20 +30,20 @@ mod tests {
     #[test]
     // Standard usecase
     fn basic() {
-        let cell = Cell::new(0b000000_001_001_001_0).unwrap();
+        let cell = Cell::new(0b001_001_001_0).unwrap();
         assert!(cell.single_candidate().is_none());
 
-        let cell = Cell::new(0b000000_000_010_000_0).unwrap();
+        let cell = Cell::new(0b000_010_000_0).unwrap();
         assert_eq!(cell.single_candidate(), Some(Num::new(5).unwrap()));
     }
 
     #[test]
     // Reject known cells, even in banned representations
     fn discard_known() {
-        let cell = Cell::new(0b000000_000_010_000_1).unwrap();
+        let cell = Cell::new(0b000_010_000_1).unwrap();
         assert!(cell.single_candidate().is_none());
 
-        let cell = unsafe { Cell::new_unchecked(0b000000_000_111_000_1) };
+        let cell = unsafe { Cell::new_unchecked(0b000_111_000_1) };
         assert!(cell.single_candidate().is_none());
     }
 

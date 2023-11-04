@@ -28,9 +28,12 @@ pub use update::*;
 ///     |      (9 8 7  6 5 4  3 2 1)
 ///     "banned" bits
 /// ```
-///
-/// Because of this representation, for visual clarity the unusual byte grouping of
-/// "`0b000000_000_000_000_0`" is commonly used for `u16`s relating to `Cells`.
+/// #### Byte Grouping
+/// Because of this representation, for visual clarity the "unusual" byte grouping of
+/// "`0b000_000_000_0`" is commonly used for `const u16`s relating to `Cells` within the documentation.
+/// As per the Rust language specification, this notation implies that the top 6 bits (the banned
+/// bits) are zeroed. When dicussing the banned bits the grouping "`0b000000_000_000_000_0`" is
+/// instead used.
 ///
 /// Errors relating to `Cell` representations (see below) are contained in the [`CandidateError`] enum.
 ///
@@ -41,15 +44,15 @@ pub use update::*;
 /// This means there must only be a single "candidate bit" set.
 /// ```
 /// // Valid u16 representation of a cell with value 9.
-/// assert!(Cell::new(0b000000_100_000_000_1).is_ok());
+/// assert!(Cell::new(0b100_000_000_1).is_ok());
 ///
 /// // Invalid u16 representation. Known bit is set but candidate bits for 5 and 6 are set.
 /// // This would represent a cell with a known value that is both 5 and 6.
-/// assert!(Cell::new(0b000000_000_110_000_1).is_err());
+/// assert!(Cell::new(0b000_110_000_1).is_err());
 ///
 /// // Invalid u16 representation. Known bit is set but there are no set candidate bits.
 /// // This would represent a cell with a known value, but no known value is set.
-/// assert!(Cell::new(0b000000_000_000_000_1).is_err());
+/// assert!(Cell::new(0b000_000_000_1).is_err());
 /// ```
 /// #### Candidates
 /// The following 9 bits are the "candidate" bits, these represent the possible candidate numbers
@@ -74,14 +77,14 @@ pub use update::*;
 /// We refer to a cell holding a known number as having a _value_ of said number,
 /// while a cell not holding a known number as having _candidates_:
 /// ```
-/// Cell(0b000000_100_000_000_1); // has "value" 9.
-/// Cell(0b000000_000_000_111_0); // has "candidates" 1, 2, and 3.
+/// Cell(0b100_000_000_1); // has "value" 9.
+/// Cell(0b000_000_111_0); // has "candidates" 1, 2, and 3.
 /// ```
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Cell(u16);
 
 /// Inner value of a [`Cell`](Cell) representing all candidates being possible.
-pub const ALL_CANDIDATES: u16 = 0b000000_111_111_111_0;
+pub const ALL_CANDIDATES: u16 = 0b111_111_111_0;
 
 /// Errors relating to a Cell's candidates.
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -95,7 +98,7 @@ pub enum CandidateError {
     /// Known bit is set but no candidates are set.
     ///
     /// ```
-    /// let cell = unsafe{ Cell::new_unchecked(0b000000_000_000_000_1) };
+    /// let cell = unsafe{ Cell::new_unchecked(0b000_000_000_1) };
     /// assert!(cell.to_u16() == 1);
     /// ```
     KnownNoNum,
