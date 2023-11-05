@@ -15,7 +15,7 @@ impl TryFrom<&str> for Board {
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s
             .chars()
-            .filter_map(|c| c.is_ascii_digit().then_some(c as u8))
+            .filter_map(|c| c.to_digit(10).map(|n| n as u8))
             .collect::<Vec<u8>>()
             .try_into()
         {
@@ -25,13 +25,25 @@ impl TryFrom<&str> for Board {
     }
 }
 
+impl Board {
+    /// Prints `self` using the [`Display`] trait.
+    pub fn print(&self) {
+        println!("{self}");
+    }
+
+    /// Prints `self` using the [`Debug`] trait.
+    pub fn dbg(&self) {
+        println!("{self:?}");
+    }
+}
+
 impl Debug for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in self.0.chunks(9) {
             let spaced_row = {
                 let mut tmp = [b' '; 17];
                 for i in 0..9 {
-                    tmp[2 * i] = row[i];
+                    tmp[2 * i] = row[i] + b'0';
                 }
                 tmp
             };
@@ -49,15 +61,7 @@ impl Display for Board {
         let mut fmt_row_iter = rows.into_iter().map(|r| {
             format!(
                 "│ {} {} {} │ {} {} {} │ {} {} {} │",
-                r[0] - b'0',
-                r[1] - b'0',
-                r[2] - b'0',
-                r[3] - b'0',
-                r[4] - b'0',
-                r[5] - b'0',
-                r[6] - b'0',
-                r[7] - b'0',
-                r[8] - b'0',
+                r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8],
             )
         });
         writeln!(f, "┌───────────────────────┐")?;
@@ -72,7 +76,7 @@ impl Display for Board {
         writeln!(f, "{}", fmt_row_iter.next().unwrap())?;
         writeln!(f, "{}", fmt_row_iter.next().unwrap())?;
         writeln!(f, "{}", fmt_row_iter.next().unwrap())?;
-        writeln!(f, "└───────────────────────┘")?;
+        write!(f, "└───────────────────────┘")?;
         Ok(())
     }
 }
