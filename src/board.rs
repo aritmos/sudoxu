@@ -6,13 +6,13 @@ use std::fmt::{Debug, Display};
 /// Each byte is guaranteed to be an ascii digit.
 pub struct Board(pub [u8; 81]);
 
-impl TryFrom<String> for Board {
+impl TryFrom<&str> for Board {
     type Error = ();
 
     /// Parses a `String` into a [Board].
     /// The parsing ignores any `char`s that are not (base 10) digits.
     /// Returns an error if the number of digits is not equal to 81.
-    fn try_from(s: String) -> Result<Self, Self::Error> {
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s
             .chars()
             .filter_map(|c| c.is_ascii_digit().then_some(c as u8))

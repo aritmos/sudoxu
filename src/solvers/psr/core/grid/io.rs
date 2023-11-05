@@ -17,7 +17,7 @@ mod tests {
     #[test]
     fn empty_board() {
         let s = std::string::String::from_utf8(vec![b'0'; 81]).unwrap();
-        let b = Board::try_from(s).unwrap();
+        let b = Board::try_from(s.as_str()).unwrap();
         assert_eq!(Grid::from(b), Grid::default());
     }
 }
