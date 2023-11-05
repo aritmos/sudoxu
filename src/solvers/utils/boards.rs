@@ -1,6 +1,6 @@
 #![allow(unused)]
-/// Board 01 unsolved as input `&str`.
-pub const SUDOKU_1_UNSOLVED_STR: &str = "
+/// Board 01 (Easy) Unsolved, as `&str`.
+pub const B1_U_STR: &str = "
     0 0 6 0 4 0 0 9 7\
     0 4 0 7 3 0 0 1 0\
     0 1 7 0 9 2 0 3 0\
@@ -13,7 +13,7 @@ pub const SUDOKU_1_UNSOLVED_STR: &str = "
     ";
 
 /// Board 01 unsolved as `board.to_string()`.
-pub const SUDOKU_1_UNSOLVED_FMT_STR: &str = "\
+pub const B1_U_FMT_STR: &str = "\
     ┌───────────────────────┐\n\
     │     6 │   4   │   9 7 │\n\
     │   4   │ 7 3   │   1   │\n\
@@ -28,3 +28,16 @@ pub const SUDOKU_1_UNSOLVED_FMT_STR: &str = "\
     │ 8 6   │   2   │ 3     │\n\
     └───────────────────────┘\n\
     ";
+
+/// Board 02 (Insane) Unsolved, as `&str`.
+pub const B2_U_STR: &str = "
+    0 0 0 0 0 0 0 6 0\
+    2 8 0 0 0 0 0 0 4\
+    0 0 7 0 0 5 8 0 0\
+    5 0 0 3 4 0 0 2 0\
+    4 0 0 5 0 1 0 0 8\
+    0 1 0 0 7 6 0 0 3\
+    0 0 5 1 0 0 2 0 0\
+    3 0 0 0 0 0 0 8 1\
+    0 9 0 0 0 0 0 0 0\
+";
