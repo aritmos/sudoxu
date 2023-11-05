@@ -46,6 +46,16 @@ impl CellMask {
         (x & !ALL_CANDIDATES == 0).then_some(Self(x))
     }
 
+    /// Creates a [`CellMask`] from a `u16`. Does not check the underlying representation is
+    /// correct.
+    ///
+    /// # Safety
+    /// The caller must ensure that the content of the `u16` is a
+    /// valid representation of a [`CellMask`].
+    pub unsafe fn new_unchecked(x: u16) -> Self {
+        Self(x)
+    }
+
     /// Creates a [`CellMask`] with an inner `u16` equal to that of a known [`Cell`] with value
     /// `num` but without the known bit.
     ///

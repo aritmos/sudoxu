@@ -50,7 +50,7 @@ impl Grid {
     /// The function is a wrapper for a finder method.
     /// See the [core module's documentation](super::super#finders) for more information.
     pub fn unique_candidate(&self, grid_idx: GridIdx) -> Result<Option<Num>, CandidateError> {
-        let sections = self.sections(grid_idx);
+        let sections = self.get_sections(grid_idx);
         let inner_idxs = grid_idx.inner_idxs();
 
         let mut result = Ok(None);

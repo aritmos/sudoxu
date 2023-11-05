@@ -12,5 +12,8 @@ pub mod num;
 
 /// A row, column, or box within the grid.
 pub mod section;
-/// Filter type, used to remove candidates from [Cells](cell::Cell).
+
+/// Filter type, used to remove candidates from [`Cells`](cell::Cell).
 pub mod filter;
+
+pub mod area;

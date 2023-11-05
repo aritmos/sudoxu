@@ -78,3 +78,16 @@ pub type SectionIdx = Idx<9>;
 /// 0 1 2 │  ...  │
 /// ```
 pub type InnerIdx = Idx<9>;
+
+// TODO: define an Area in the documentation as it doesnt exist as a standalone struct
+/// An index into the `Area`s of the grid.
+/// ```txt
+///  0   1   2
+///  ↓   ↓   ↓
+///    │   │   <- 3
+/// ───┼───┼───
+///    │   │   <- 4
+/// ───┼───┼───
+///    │   │   <- 5
+/// ```
+pub type AreaIdx = Idx<6>;

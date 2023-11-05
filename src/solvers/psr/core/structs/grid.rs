@@ -5,8 +5,9 @@ mod update;
 pub use update::*;
 
 use super::{
+    area::FoldedArea,
     cell::Cell,
-    idx::GridIdx,
+    idx::{AreaIdx, GridIdx},
     section::{Section, SectionInfo, SectionKind},
 };
 
@@ -69,6 +70,10 @@ impl Grid {
         Section::new(section_info, cells)
     }
 
+    /// Returns (a copy of) the specified [`FoldedArea`].
+    // pub fn folded_area(&self, area_idx: FoldedArea) -> FoldedArea {
+    //     todo!()
+    // }
 
     /// Returns (copies of) the [`Sections`](Section) of the [`Cell`] at the given [`GridIdx`].
     pub fn get_sections(&self, grid_idx: GridIdx) -> [Section; 3] {

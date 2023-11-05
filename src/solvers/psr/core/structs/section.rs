@@ -7,7 +7,7 @@ use super::{
     idx::{GridIdx, InnerIdx, SectionIdx},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A row, column, or box of [`Cells`](Cell).
 pub struct Section {
     /// The information linking to what [`Section`] within the
