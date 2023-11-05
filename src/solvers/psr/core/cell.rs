@@ -1,6 +1,6 @@
 use super::num::Num;
 
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 mod fmt; // Cell formatting
 
