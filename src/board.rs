@@ -7,6 +7,7 @@ use std::fmt::{Debug, Display};
 pub struct Board(pub [u8; 81]);
 
 /// [`Board`] related errors.
+#[derive(Debug)]
 pub enum BoardError {
     /// Error parsing an `&str` into a [`Board`].
     FromStrError,
