@@ -1,13 +1,20 @@
-/// Functions that remove candidates from [Cells](structs::cell::Cell) and encompasing types.
-#[doc(hidden)]
-pub mod filters;
+/// The cells in a sudoku grid.
+pub mod cell;
 
-/// Functions that identify known values within [Cells](structs::cell::Cell).
-#[doc(hidden)]
-pub mod finders;
+/// The sudoku board.
+pub mod grid;
 
-/// Types and implementations for the PSR solver category.
-#[doc(hidden)]
-pub mod structs;
-#[doc(inline)]
-pub use structs::*;
+/// Safe indexing into comptime known arrays.
+pub mod idx;
+
+/// Representation of a known number within a [`Cell`](cell::Cell): `1 <= N <= 9`.
+pub mod num;
+
+/// A row, column, or box within the grid.
+pub mod section;
+
+/// Filter type, used to remove candidates from [`Cells`](cell::Cell).
+pub mod filter;
+
+/// Adjacent [`Sections`](section::Section) forming a third of the board.
+pub mod area;

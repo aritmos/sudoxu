@@ -1,5 +1,6 @@
-use super::Cell;
 use std::fmt::{Debug, Display};
+
+use super::Cell;
 
 impl Debug for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

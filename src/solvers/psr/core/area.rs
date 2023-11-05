@@ -6,6 +6,9 @@ use super::{
     section::{SectionInfo, SectionKind::Box},
 };
 
+// TODO: make this documentation better
+/// An `Area` whose squares have been projected into columns.
+/// Used for the "Lines"-style techniques.
 pub struct FoldedArea {
     folds: [[u16; 3]; 3],
     masks: [[u16; 3]; 3],
@@ -13,61 +16,26 @@ pub struct FoldedArea {
     idx: AreaIdx,
 }
 
-const BOX_SECTION_IDXS: [[SectionIdx; 3]; 6] = unsafe {
-    std::mem::transmute::<[[usize; 3]; 6], _>([
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-    ])
-};
+/// SectionIdxs for the Boxes making up the six Areas defined by the six AreaIdxs
 
-// Copy over to `grid.rs` when done
-impl Grid {
-    /// Constructs the [`FoldedArea`] at the location specified by the given index.
-    pub fn get_folded_area(&self, area_idx: AreaIdx) -> FoldedArea {
-        let boxes = BOX_SECTION_IDXS[usize::from(area_idx)] // indexes
-            .map(|i| SectionInfo::new(Box, i)) // infos
-            .map(|info| self.get_section(info)); // sections
-
-        // this implementation keeps the "known bit" when accumulating
-        let known = boxes.clone().map(|b| {
-            b.cells
-                .iter()
-                .filter_map(|cell| cell.is_known().then_some(cell.to_u16()))
-                .fold(0, |a, b| a | b)
-        });
-
-        let fold_hor = |b: [u16; 9]| [b[0] | b[1] | b[2], b[3] | b[4] | b[5], b[6] | b[7] | b[8]];
-        let fold_ver = |b: [u16; 9]| [b[0] | b[3] | b[6], b[1] | b[4] | b[7], b[2] | b[5] | b[8]];
-
-        let fold_func = if usize::from(area_idx) <= 2 {
-            fold_ver
-        } else {
-            fold_hor
-        };
-
-        let folds = boxes.map(|b| unsafe { fold_func(std::mem::transmute(b.cells)) });
-
-        FoldedArea {
+impl FoldedArea {
+    /// Creates a new [`FoldedArea`].
+    pub fn new(folds: [[u16; 3]; 3], known: [u16; 3], idx: AreaIdx) -> Self {
+        Self {
             folds,
             masks: [[0; 3]; 3],
             known,
-            idx: area_idx,
+            idx,
         }
     }
-}
 
-/// Core
-impl FoldedArea {
     /// Turns inner masks into [Filters](Filter).
     /// Some filters may be redundant with respect to the board's state.
     pub fn get_filters(&self) -> [Filter; 27] {
         let mut grid_idxs = unsafe {
             std::mem::transmute::<_, [GridIdx; 27]>(
-                BOX_SECTION_IDXS[usize::from(self.idx)]
+                self.idx
+                    .to_box_section_idxs() // idxs
                     .map(|i| SectionInfo::new(Box, i)) // infos
                     .map(|si| si.grid_idxs()), // grid idxs
             )
@@ -122,10 +90,13 @@ impl FoldedArea {
     pub fn update_known(&mut self, grid: &Grid) -> bool {
         todo!()
     }
-}
 
-/// Filters
-impl FoldedArea {
+    // ========================================================
+    // Solving
+    // ========================================================
+
+    /// Creates a mask representing if each candidate within a column exists `N` times within its
+    /// rows.
     pub fn count<const N: u8>(&self) -> [u16; 3] {
         [0, 1, 2].map(|i| {
             let [x, y, z] = self.folds[i];
@@ -211,8 +182,6 @@ impl FoldedArea {
                 .collect::<Vec<u16>>();
 
             for candidate in shared_candidates {
-                // > for each shared candidate we need the rows to also match up.
-                // > we check for the row that does not contain the candidate
                 let find_row_idx = |col_idx: usize| {
                     (0..=2)
                         .position(|row_idx| self.folds[col_idx][row_idx] & candidate == 0)

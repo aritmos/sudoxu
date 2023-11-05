@@ -25,6 +25,9 @@ impl From<Section> for SimdSection {
 impl SimdSection {
     /// Checks inner [`Cells`](super::super::cell::Cell) for containing `n` as a candidate, and
     /// stores result in a mask.
+    ///
+    /// # Safety
+    /// (Inner SIMD functions are unsafe)
     pub unsafe fn contains_mask(self, n: Num) -> u16 {
         let i16_mask = 1 << u16::from(n);
 

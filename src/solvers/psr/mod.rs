@@ -2,9 +2,8 @@
 
 /// Core functionality for PSR solvers.
 ///
-/// # Structs
-///
-/// # Finders
-///
-/// # Filters
+/// # Basic Structs
+/// TODO
+/// # Solving Techniques
+/// TODO
 pub mod core;

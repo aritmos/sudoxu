@@ -1,9 +1,8 @@
 use super::num::Num;
 
-mod fmt;
-mod update;
-#[doc(inline)]
-pub use update::*;
+use std::fmt::{Debug, Display};
+
+mod fmt; // Cell formatting
 
 /// A cell within the grid.
 /// Holds information about what candidates the cell has, and if the value of the cell is known.
@@ -83,7 +82,7 @@ pub use update::*;
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Cell(u16);
 
-/// Inner value of a [`Cell`](Cell) representing all candidates being possible.
+/// Inner value of a [`Cell`] representing all candidates being possible.
 pub const ALL_CANDIDATES: u16 = 0b111_111_111_0;
 
 /// Errors relating to a Cell's candidates.
@@ -119,7 +118,7 @@ pub enum CandidateError {
     /// This is not an error in the representation of the [Cell], but an error in the state of the
     /// [Grid](super::grid::Grid).
     ///
-    /// See [finders::unique_candidate](super::super::finders::unique_candidate) for more
+    /// See [finders::unique_candidate](super::section::Section::unique_candidate) for more
     /// information.
     MultipleUniqueCandidates,
 }
@@ -130,8 +129,11 @@ impl Default for Cell {
     }
 }
 
-/// Base Implementations
 impl Cell {
+    // ========================================================
+    // Core Functionality
+    // ========================================================
+
     /// Checks if a given [`Cell`] has an allowed representation.
     pub fn check(self) -> Result<(), CandidateError> {
         let self_u16 = self.to_u16();
@@ -197,5 +199,90 @@ impl Cell {
     #[inline(always)]
     pub unsafe fn zeroed() -> Cell {
         Cell::new_unchecked(0_u16)
+    }
+
+    // ========================================================
+    // Solving
+    // ========================================================
+
+    /// Checks if a [`Cell`] is not known and only contains a single candidate.
+    /// Returns [`Some(Num)`](Num) if it is a single candidate, else `None`.
+    ///
+    /// # Safety
+    /// Does not check that the underyling `u16` representation is correct.
+    ///
+    /// Returns `false` in the cases of
+    /// [`CandidateError::KnownNoNum`]
+    /// and [`CandidateError::BannedBits`]
+    pub fn single_candidate(self) -> Option<Num> {
+        let is_single_candidate =
+            !self.is_known() && (self.to_u16() & ALL_CANDIDATES).count_ones() == 1;
+        is_single_candidate.then_some(unsafe { Num::new_unchecked(self.to_u16().ilog2() as u8) })
+    }
+
+    // ========================================================
+    // Updating
+    // ========================================================
+
+    /// Sets the known bit of the given cell.
+    /// # Safety
+    /// Caller guarantees that the cell only has a single candidate,
+    /// such that setting the known bit results in a valid representation.
+    pub unsafe fn set_known_bit(&mut self) {
+        self.0 |= 1;
+    }
+
+    /// Adds the set candidate bits in the `CellMask` to the `Cell`.
+    /// # Safety
+    /// This function is provided to give a performance improvement to candidate removal.
+    /// The caller guarantees that this operation respects the `Cell` representation.
+    pub unsafe fn set_candidates(&mut self, mask: CellMask) {
+        self.0 |= mask.0
+    }
+
+    /// Removes the candidate bits set in the mask from the cell.
+    pub fn remove_candidates(&mut self, mask: CellMask) {
+        self.0 &= !mask.0
+    }
+}
+
+/// Used to remove multiple candidates from a `Cell`.
+/// Will always be applied as a negative mask onto the candidate bits.
+#[derive(Clone, Copy)]
+pub struct CellMask(u16);
+
+impl CellMask {
+    /// Returns the inner `u16`.
+    pub fn to_u16(self) -> u16 {
+        self.0
+    }
+
+    /// Creates a [`CellMask`] from a `u16`. Returns `None` if bits outside of "candidate bits" are
+    /// set. See [Cell's representation](Cell#internal-representation) for more information.
+    pub fn new(x: u16) -> Option<Self> {
+        (x & !ALL_CANDIDATES == 0).then_some(Self(x))
+    }
+
+    /// Creates a [`CellMask`] from a `u16`. Does not check the underlying representation is
+    /// correct.
+    ///
+    /// # Safety
+    /// The caller must ensure that the content of the `u16` is a
+    /// valid representation of a [`CellMask`].
+    pub unsafe fn new_unchecked(x: u16) -> Self {
+        Self(x)
+    }
+
+    /// Creates a [`CellMask`] with an inner `u16` equal to that of a known [`Cell`] with value
+    /// `num` but without the known bit.
+    ///
+    /// # Example
+    /// ```
+    /// let num = Num::new(3).unwrap();
+    /// let cellmask = CellMask::new(num);
+    /// assert_eq(cellmask.to_u16(), 0b000_000_100_0);
+    /// ```
+    pub fn from_known(num: Num) -> Self {
+        Self(1 << u16::from(num))
     }
 }
