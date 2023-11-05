@@ -1,3 +1,6 @@
-/target
+# Bacon stuff
 .bacon-locations
 bacon.toml
+
+# Rust Outputs
+target/

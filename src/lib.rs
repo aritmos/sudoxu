@@ -1,26 +1,20 @@
-#![allow(dead_code)]
-#![allow(incomplete_features)]
-#![allow(clippy::missing_safety_doc)]
+#![warn(missing_docs)]
+#![allow(unused)]
+#![allow(clippy::unusual_byte_groupings)]
+// used to turn [T; N] into SIMD types such as `__m256`.
+// currently using loads and pointer casts to avoid use.
+// #![feature(portable_simd)]
+// Direct access to certain SIMD functions
 #![feature(stdsimd)]
-#![feature(portable_simd)]
-#![feature(slice_flatten)]
-#![feature(generic_const_exprs)]
-#![feature(maybe_uninit_uninit_array)]
-#![feature(maybe_uninit_array_assume_init)]
-#![feature(maybe_uninit_write_slice)]
-#![feature(adt_const_params)]
 
-mod structs;
-pub use structs::*;
+//! # Sudoxu
+//! A Rust library for sudoku solving.
+//!
+//! For parity with the codebase, always clone the repo and locally compile the documentation using
+//! `rustup` or `cargo doc`.
+//!
+//! ## Project Structure
 
-mod utils;
-pub use utils::*;
-
-mod filters;
-pub use filters::*;
-
-mod finders;
-pub use finders::*;
-
-mod test;
-pub use test::*;
+pub mod board;
+pub mod solver;
+pub mod solvers;
