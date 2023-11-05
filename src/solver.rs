@@ -1,6 +1,6 @@
 //! The root `Solver` trait, implemented for all types which can solve sudokus.
 
-use crate::board::Board;
+use crate::board::{Board, BoardError};
 
 /// A sudoku solver.
 pub trait Solver: Sized {
@@ -9,6 +9,13 @@ pub trait Solver: Sized {
 
     /// Compute the solution and return the solved board.
     fn solve(self) -> Board;
+}
+
+/// Parses the `&str` into a [`Board`] and solves it with the specified [`Solver`].
+pub fn solve_board<S: Solver>(board_str: &str) -> Result<Board, BoardError> {
+    let board = Board::try_from(board_str)?;
+    let solver = S::init(board);
+    Ok(solver.solve())
 }
 
 /// A sudoku solver that shows its steps into solving the sudoku.

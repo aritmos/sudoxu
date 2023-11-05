@@ -6,8 +6,14 @@ use std::fmt::{Debug, Display};
 /// Each byte is guaranteed to be an ascii digit.
 pub struct Board(pub [u8; 81]);
 
+/// [`Board`] related errors.
+pub enum BoardError {
+    /// Error parsing an `&str` into a [`Board`].
+    FromStrError,
+}
+
 impl TryFrom<&str> for Board {
-    type Error = ();
+    type Error = BoardError;
 
     /// Parses a `String` into a [Board].
     /// The parsing ignores any `char`s that are not (base 10) digits.
@@ -20,7 +26,7 @@ impl TryFrom<&str> for Board {
             .try_into()
         {
             Ok(a) => Ok(Self(a)),
-            Err(_) => Err(()),
+            Err(_) => Err(BoardError::FromStrError),
         }
     }
 }

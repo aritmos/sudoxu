@@ -18,3 +18,11 @@
 pub mod board;
 pub mod solver;
 pub mod solvers;
+
+/// Prelude module, used for easy access to solvers and functions.
+#[macro_export]
+pub mod prelude {
+    pub use super::solver::solve_board;
+    pub use super::solvers::utils::{boards::*, time::time};
+    pub use super::solvers::*;
+}
