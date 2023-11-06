@@ -125,7 +125,7 @@
 //! ## Project Roadmap
 //!
 //! The essential implementation ordering is as outlined below, although I commonly work on what I
-//! feel like doing. Work towards a major version can occur before a prior major version is
+//! feel like doing. Hence work towards a major version can occur before a prior major version is
 //! finished.
 //!
 //! * `v0.2.0` (Core lib)

@@ -80,7 +80,7 @@ impl Grid {
                 }
 
                 let filter = Filter::new(mask, grid_idx);
-                filters[write_idx] = MaybeUninit::new(filter);
+                filters[write_idx].write(filter);
                 write_idx += 1;
             }
         }
@@ -124,7 +124,7 @@ impl Grid {
         let mut uninit_cells: [MaybeUninit<Cell>; 9] =
             unsafe { MaybeUninit::uninit().assume_init() };
         for (cell, grid_idx) in uninit_cells.iter_mut().zip(grid_idxs) {
-            *cell = MaybeUninit::new(self.get_cell(grid_idx));
+            cell.write(self.get_cell(grid_idx));
         }
 
         let cells: [Cell; 9] = unsafe { std::mem::transmute(uninit_cells) };

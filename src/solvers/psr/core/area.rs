@@ -63,7 +63,7 @@ impl FoldedArea {
                 idx: grid_idxs[write_idx],
                 mask: unsafe { CellMask::new_unchecked(masks[write_idx / 3]) },
             };
-            filters[write_idx] = MaybeUninit::new(filter);
+            filters[write_idx].write(filter);
         }
 
         unsafe { std::mem::transmute(filters) }
@@ -124,23 +124,25 @@ impl FoldedArea {
     pub fn single_lines(&mut self) -> bool {
         let mut updated = false;
 
-        let mut count_1_unknown = self.count::<1>();
-        for (a, b) in count_1_unknown.iter_mut().zip(self.known) {
-            *a &= !b;
-        }
+        let mut count_1_unknown = {
+            let mut count_1 = self.count::<1>();
+            for (a, b) in count_1.iter_mut().zip(self.known) {
+                *a &= !b;
+            }
+            count_1
+        };
 
         #[allow(clippy::needless_range_loop)] // the idx is decoupled to `count_1`
         for idx in 0..=2 {
-            let c = count_1_unknown[idx];
-            if c == 0 {
+            let combined_candidates = count_1_unknown[idx];
+            if combined_candidates == 0 {
                 continue;
             }
 
-            // split each high bit in `c` into its own `u16`; collect into vec
             let candidates = (1..=9)
                 .filter_map(|i| {
                     let candidate = 1 << i;
-                    (c & candidate != 0).then_some(candidate)
+                    (combined_candidates & candidate != 0).then_some(candidate)
                 })
                 .collect::<Vec<u16>>();
 
@@ -171,13 +173,14 @@ impl FoldedArea {
         // i.e. we check for matching double lines in the remaining two columns
         for idx in 0..=2 {
             let compliment_idxs = [[1, 2], [0, 2], [0, 1]][idx];
-            let [c2_a, c2_b] = compliment_idxs.map(|i| count_2[i]);
-            let shared_bits = c2_a & c2_b;
+            let compliment_cols_candidates = compliment_idxs.map(|i| count_2[i]);
+            let shared_combined_candidates =
+                compliment_cols_candidates[0] & compliment_cols_candidates[1];
 
             let shared_candidates = (1..=9)
                 .filter_map(|i| {
                     let candidate = 1 << i;
-                    (shared_bits & candidate != 0).then_some(candidate)
+                    (shared_combined_candidates & candidate != 0).then_some(candidate)
                 })
                 .collect::<Vec<u16>>();
 
