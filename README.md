@@ -27,17 +27,14 @@ The `sudoxu` codebase (will eventually) consist of three main modules:
     - Accessible (for now) on my [github.io page](https://aritmos.github.io/sudoxu)
     - Always available by cloning the repo and running: `cargo doc --open`.
 
----
-
-- Currently the project is being rewritten in the [rewrite branch](https://github.com/aritmos/sudoxu/tree/rewrite), as I polish the original code that I wrote for the project over the summer.
+- The development of the more advanced solving strategies is currently on hold until I get a hold of a new CPU that supports the AVX512 instruction set along with specific extensions. This is essential for implementing the more intricate algorithms involving efficient bit manipulation that I have come up with.
 
 - To view the current implementation state and the project roadmap, visit the issues and projects tabs.
 
-- The development of the more advanced solving strategies is currently on hold until I get a hold of a new CPU that supports the AVX512 instruction set along with specific extensions. This is essential for implementing the more intricate algorithms involving efficient bit manipulation that I have come up with.
 
 ## 🔭 Project Focus
 Sudoxu is the successor to my original code-golf backtracking [Python implementation](https://gist.github.com/aritmos/abd51b581c261ce6ce9c25511e5ea7e7) aimed to make use of the lower-level capabilities of Rust, and pushing my knowledge of algorithms and memory manipulation. In this project I am heavily focusing on:
 
 - **Memory and Dependencies**: A heavy emphasis on the memory footprint of the program and standard library usage over external libraries. The final implementation could very well be able to run on embedded systems. 
-- **Algorithms, Assembly and Vectorisation**: A close monitoring of the compiled implementations using [Compiler Explorer](https://rust.godbolt.org/) and [cargo-show-asm](https://crates.io/crates/cargo-show-asm) to optimise functions. I am already using some SIMD intrinsics with the use of the [Intel Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) thanks to Rust's [vendor intrinsics support](https://doc.rust-lang.org/core/arch/index.html). As this is a personal project, I will be working with what's available to my machine: intel (`x86_64`) cpu supporting `SSE4.1`, `SSE4.2` and `AVX2` instruction sets.
+- **Algorithms, Assembly and Vectorisation**: A close monitoring of the compiled implementations using [Compiler Explorer](https://rust.godbolt.org/) and [cargo-show-asm](https://crates.io/crates/cargo-show-asm) to optimise functions. I am already using some SIMD intrinsics with the use of the [Intel Intrinsics Guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) thanks to Rust's [vendor intrinsics support](https://doc.rust-lang.org/core/arch/index.html). As this is a personal project, I will be working with what's available to my machine: intel (`x86_64`) cpu supporting `SSE4.1`, `SSE4.2` and `AVX2` instruction sets. (But hopefully I can get my hands on a CPU with `AVX512` support along with necessary ISAs like `BITALG`, `VPOPCNT`, and `BW`)
 - **Benchmarking**: Current focus on microbenchmarks using Rusts in-built benchmarking, [hyperfine](https://crates.io/crates/hyperfine), [easybench](https://crates.io/crates/easybench) and [criterion](https://crates.io/crates/criterion). Expecting to improve the procedure by benchmarking longer implementation chains once I have finished writing the core logic.
